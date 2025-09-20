@@ -968,6 +968,8 @@ export default function VirtualProfessorHomepage() {
         <button onClick={() => sendMessage(query)} className="px-3 py-2 rounded bg-indigo-600 text-white hover:opacity-95">Send</button>
       </div>
     </div>
+  );
+
   // Footer
   const Footer = () => (
     <footer className="max-w-6xl mx-auto p-6 text-sm text-gray-500 dark:text-gray-400 border-t dark:border-gray-700 mt-16">
