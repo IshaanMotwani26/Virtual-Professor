@@ -4,8 +4,11 @@ import bcrypt from "bcrypt";
 const uri = process.env.DB_URI!;
 const SALT_ROUNDS = 10;
 
+const client = new MongoClient(uri);
+const backendDB = client.db("Virtual-Prof");
+const users = backendDB.collection("Users");
+
 async function run_test() {
-	const client = new MongoClient(uri);
 	try {
 		const database = client.db('sample_mflix');
 		const movies = database.collection('movies');
@@ -13,25 +16,51 @@ async function run_test() {
 		const query = { title: 'Back to the Future' };
 		const movie = await movies.findOne(query);
 		console.log(movie);
-	} finally {
-		await client.close();
-	}
+	} finally { }
 }
 
-export async function add_user(username: string, password: string, email: string): Promise<string | undefined> {
-	const client = new MongoClient(uri);
-	const backendDB = client.db("Virtual-Prof");
-	const users = backendDB.collection("Users");
-	if (await users.findOne({ username })) {
+type User = {
+	name: string,
+	username: string,
+	password: string,
+	email: string
+}
+
+export async function add_user(data: User): Promise<string | undefined> {
+	if (await users.findOne({ username: data.username })) {
 		console.log("Duplicate user signup detected");
 		return "User already signed up";
 	}
-	bcrypt.hash(password, SALT_ROUNDS, function(err, hash) {
+	bcrypt.hash(data.password, SALT_ROUNDS, function(err, hash) {
+		if (err) {
+			console.error(err);
+			return "Error hashing password, please report";
+		}
+		users.insertOne({
+			username: data.username,
+			email: data.email,
+			name: data.name,
+			hash: hash
+		});
+	});
+}
+
+// TODO: Actually create a session for the user and return that
+export async function login(data: User): Promise<string | undefined> {
+	const user = await users.findOne({ username: data.username });
+	if (!user) {
+		return `No user found with username ${data.username}`;
+	}
+	bcrypt.compare(data.password, user.hash, function(err, matches) {
 		if (err) {
 			console.error(err);
 			return;
 		}
-		users.insertOne({ username, hash, email });
+		if (matches) {
+			return "Logged in";
+		} else {
+			return "Password did not match"
+		}
 	});
 }
 
