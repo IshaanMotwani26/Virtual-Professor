@@ -1,6 +1,6 @@
 import Header from "@/components/header";
 
-export default function HomePage() {
+export default function Vinay() {
 
   return (
     <div className="flex h-full w-full flex-col">
