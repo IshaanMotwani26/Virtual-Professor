@@ -17,7 +17,7 @@ export async function POST(req: Request) {
       body: JSON.stringify({
         model: "gpt-4o-mini",
         messages: [
-          { role: "system", content: "You are Virtual Professor. Teach before telling the answer." },
+          { role: "system", content: "Then list key concepts needed to solve it and provide guiding hints. Do NOT give the final answer." },
           { role: "user", content: prompt ?? "" },
         ],
       }),
