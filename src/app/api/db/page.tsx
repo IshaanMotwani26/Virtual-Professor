@@ -1,8 +1,6 @@
 import { MongoClient } from "mongodb";
-import bcrypt from "bcrypt";
 
 const uri = process.env.DB_URI!;
-const SALT_ROUNDS = 10;
 
 async function run_test() {
 	const client = new MongoClient(uri);
@@ -18,21 +16,14 @@ async function run_test() {
 	}
 }
 
-export async function add_user(username: string, password: string, email: string) {
+async function add_user(username: string, password: string, email: string) {
 	const client = new MongoClient(uri);
 	const backendDB = client.db("Virtual-Prof");
-	const users = backendDB.collection("Users");
-	bcrypt.hash(password, SALT_ROUNDS, function(err, hash) {
-		if (err) {
-			console.error(err);
-			return;
-		}
-		users.insertOne({ username, hash, email });
-	});
+	const users = backendDB.collection("users");
+	users.createIndex(username)
 }
 
 export default function() {
-	add_user("VINAY", "hunter2", "havethebestgoats@gmail.com")
 	return (
 		<main className="p-8">
 			<h1 className="text-3xl font-bold mb-2">DB Page</h1>
