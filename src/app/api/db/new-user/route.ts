@@ -18,7 +18,7 @@ export async function POST(req: Request) {
 	const client = new MongoClient(uri);
 	const backendDB = client.db("Virtual-Prof");
 	const users = backendDB.collection("Users");
-	const userData: User = (await req.json()).userData;
+	const userData: User = await req.json();
 	if (await users.findOne({ username: userData.username })) {
 		console.log("Duplicate user signup detected");
 		return NextResponse.json({ error: "User already signed up" }, { status: 409 });

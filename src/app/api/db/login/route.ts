@@ -17,7 +17,7 @@ export async function POST(req: Request) {
 	const backendDB = client.db("Virtual-Prof");
 	const users = backendDB.collection("Users");
 
-	const data: User = (await req.json()).userData;
+	const data: User = await req.json();
 	const user = await users.findOne({ username: data.username });
 	if (!user) {
 		return NextResponse.json({ error: "Password or username is invalid" }, { status: 400 });
