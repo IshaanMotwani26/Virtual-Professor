@@ -18,10 +18,14 @@ async function run_test() {
 	}
 }
 
-export async function add_user(username: string, password: string, email: string) {
+export async function add_user(username: string, password: string, email: string): Promise<string | undefined> {
 	const client = new MongoClient(uri);
 	const backendDB = client.db("Virtual-Prof");
 	const users = backendDB.collection("Users");
+	if (await users.findOne({ username })) {
+		console.log("Duplicate user signup detected");
+		return "User already signed up";
+	}
 	bcrypt.hash(password, SALT_ROUNDS, function(err, hash) {
 		if (err) {
 			console.error(err);
