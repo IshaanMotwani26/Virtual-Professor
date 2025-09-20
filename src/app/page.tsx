@@ -1,93 +1,528 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 
 export default function VirtualProfessorHomepage() {
+  // Core State
   const [query, setQuery] = useState("");
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [theme, setTheme] = useState<"light" | "dark">("dark");
   const [chatOpen, setChatOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState("home");
   const [isSignUp, setIsSignUp] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [uploadedFiles, setUploadedFiles] = useState<Array<{name: string, type: string, keyPoints: string[]}>>([]);
   const [messages, setMessages] = useState<{ from: "user" | "bot"; text: string }[]>([
     { from: "bot", text: "Hi! I'm Prof. V. Ask me anything about your courses or assignments." },
   ]);
+  const [chatQuery, setChatQuery] = useState("");
 
+  // Error Handling State
+  const [errors, setErrors] = useState<{[key: string]: string}>({});
+  const [loading, setLoading] = useState<{[key: string]: boolean}>({});
+  const [notification, setNotification] = useState<{type: 'success' | 'error' | 'info', message: string} | null>(null);
+
+  // Error handling utilities
+  const clearError = useCallback((field: string) => {
+    setErrors(prev => {
+      const newErrors = { ...prev };
+      delete newErrors[field];
+      return newErrors;
+    });
+  }, []);
+
+  const setError = useCallback((field: string, message: string) => {
+    setErrors(prev => ({ ...prev, [field]: message }));
+  }, []);
+
+  const showNotification = useCallback((type: 'success' | 'error' | 'info', message: string) => {
+    setNotification({ type, message });
+    setTimeout(() => setNotification(null), 5000);
+  }, []);
+
+  const setLoadingState = useCallback((key: string, isLoading: boolean) => {
+    setLoading(prev => ({ ...prev, [key]: isLoading }));
+  }, []);
+
+  // Safe async wrapper
+  const safeAsync = useCallback(async (operation: () => Promise<void>, errorKey: string) => {
+    try {
+      setLoadingState(errorKey, true);
+      clearError(errorKey);
+      await operation();
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred';
+      setError(errorKey, errorMessage);
+      showNotification('error', errorMessage);
+    } finally {
+      setLoadingState(errorKey, false);
+    }
+  }, [setLoadingState, clearError, setError, showNotification]);
+
+  // Search suggestions with error handling
   useEffect(() => {
-    if (!query) return setSuggestions([]);
-    const pool = [
-      "Introduction to Psychology",
-      "Math: Calculus basics",
-      "Computer Science: Data Structures",
-      "History: World War II",
-      "Economics: Supply and Demand",
-      "Exam practice: General Knowledge",
-    ];
-    setSuggestions(pool.filter((p) => p.toLowerCase().includes(query.toLowerCase())).slice(0, 5));
+    try {
+      if (!query) {
+        setSuggestions([]);
+        return;
+      }
+      
+      const pool = [
+        "Introduction to Psychology",
+        "Math: Calculus basics",
+        "Computer Science: Data Structures",
+        "History: World War II",
+        "Economics: Supply and Demand",
+        "Exam practice: General Knowledge",
+      ];
+      
+      const filtered = pool.filter((p) => 
+        p.toLowerCase().includes(query.toLowerCase())
+      ).slice(0, 5);
+      
+      setSuggestions(filtered);
+    } catch (error) {
+      console.error('Error filtering suggestions:', error);
+      setSuggestions([]);
+    }
   }, [query]);
 
+  // Theme handling with error handling
   useEffect(() => {
-    document.documentElement.classList.add("dark"); // Set dark mode as default
-    if (theme === "dark") document.documentElement.classList.add("dark");
-    else document.documentElement.classList.remove("dark");
-  }, [theme]);
+    try {
+      const root = document.documentElement;
+      if (theme === "dark") {
+        root.classList.add("dark");
+      } else {
+        root.classList.remove("dark");
+      }
+    } catch (error) {
+      console.error('Error applying theme:', error);
+      showNotification('error', 'Failed to apply theme changes');
+    }
+  }, [theme, showNotification]);
 
-  function sendMessage(text: string) {
-    if (!text.trim()) return;
-    setMessages((m) => [...m, { from: "user", text }]);
-    setQuery("");
-
-    // simulate a bot answer — replace with actual API call (fetch / websockets)
-    setTimeout(() => {
-      setMessages((m) => [...m, { from: "bot", text: "Great question — here's a quick explanation. You can also review a related micro-lesson for deeper learning." }]);
-    }, 750);
-  }
-
-  const showPage = (pageId: string) => {
-    setCurrentPage(pageId);
-    setChatOpen(false); // Close chat when navigating
+  // Validation utilities
+  const validateEmail = (email: string): boolean => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
   };
 
-  const toggleAuthMode = () => {
-    setIsSignUp(!isSignUp);
+  const validateRequired = (value: string, fieldName: string): boolean => {
+    if (!value.trim()) {
+      setError(fieldName, `${fieldName} is required`);
+      return false;
+    }
+    clearError(fieldName);
+    return true;
   };
 
-  const handleAuthSubmit = (e: React.FormEvent) => {
+  // Chat message handling with error handling
+  const sendMessage = useCallback(async (text: string) => {
+    if (!text.trim()) {
+      setError('chat', 'Please enter a message');
+      return;
+    }
+
+    try {
+      clearError('chat');
+      setMessages((m) => [...m, { from: "user", text }]);
+      setChatQuery("");
+      setLoadingState('chat', true);
+
+      // Simulate API call with potential failure
+      await new Promise((resolve, reject) => {
+        setTimeout(() => {
+          if (Math.random() > 0.1) { // 90% success rate
+            resolve(true);
+          } else {
+            reject(new Error('Failed to get response from AI assistant'));
+          }
+        }, 750);
+      });
+
+      setMessages((m) => [...m, { 
+        from: "bot", 
+        text: "Great question — here's a quick explanation. You can also review a related micro-lesson for deeper learning." 
+      }]);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to send message';
+      setError('chat', errorMessage);
+      showNotification('error', errorMessage);
+    } finally {
+      setLoadingState('chat', false);
+    }
+  }, [clearError, setError, showNotification, setLoadingState]);
+
+  // Navigation with error handling
+  const showPage = useCallback((pageId: string) => {
+    try {
+      setCurrentPage(pageId);
+      setChatOpen(false);
+      clearError('navigation');
+    } catch (error) {
+      setError('navigation', 'Failed to navigate to page');
+      showNotification('error', 'Navigation failed');
+    }
+  }, [clearError, setError, showNotification]);
+
+  // Authentication handlers with validation
+  const handleAuthSubmit = useCallback(async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    alert(isSignUp ? 'Account created successfully!' : 'Signed in successfully!');
-    setCurrentPage("home");
-  };
-
-  const handleUploadSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    alert('Assignment submitted successfully! You will receive feedback within 24 hours.');
-  };
-
-  const handleTutorSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    alert('Tutor request submitted! We will match you with a suitable tutor and contact you shortly.');
-  };
-
-  const handleMediaUpload = (e: React.FormEvent) => {
-    e.preventDefault();
-    // Simulate file processing and key point extraction
-    const mockKeyPoints = [
-      "Main concept: Photosynthesis converts light energy to chemical energy",
-      "Key process: 6CO2 + 6H2O + light energy → C6H12O6 + 6O2",
-      "Location: Occurs in chloroplasts of plant cells",
-      "Two stages: Light reactions and Calvin cycle",
-      "Importance: Primary source of energy for most life on Earth"
-    ];
     
-    const newFile = {
-      name: "Biology Lecture - Photosynthesis",
-      type: "video",
-      keyPoints: mockKeyPoints
+    const formData = new FormData(e.currentTarget);
+    const email = formData.get('email') as string;
+    const password = formData.get('password') as string;
+    const fullName = formData.get('fullName') as string;
+    const confirmPassword = formData.get('confirmPassword') as string;
+
+    // Validation
+    let hasErrors = false;
+
+    if (isSignUp && !validateRequired(fullName, 'fullName')) hasErrors = true;
+    if (!validateRequired(email, 'email')) hasErrors = true;
+    if (!validateRequired(password, 'password')) hasErrors = true;
+
+    if (email && !validateEmail(email)) {
+      setError('email', 'Please enter a valid email address');
+      hasErrors = true;
+    }
+
+    if (password && password.length < 6) {
+      setError('password', 'Password must be at least 6 characters');
+      hasErrors = true;
+    }
+
+    if (isSignUp && confirmPassword !== password) {
+      setError('confirmPassword', 'Passwords do not match');
+      hasErrors = true;
+    }
+
+    if (hasErrors) return;
+
+    await safeAsync(async () => {
+      // Simulate API call
+      await new Promise((resolve, reject) => {
+        setTimeout(() => {
+          if (Math.random() > 0.05) { // 95% success rate
+            resolve(true);
+          } else {
+            reject(new Error(isSignUp ? 'Failed to create account' : 'Failed to sign in'));
+          }
+        }, 1000);
+      });
+
+      setIsAuthenticated(true);
+      setCurrentPage("home");
+      showNotification('success', isSignUp ? 'Account created successfully!' : 'Signed in successfully!');
+    }, 'auth');
+  }, [isSignUp, validateRequired, setError, safeAsync, showNotification]);
+
+  const handleLogout = useCallback(() => {
+    try {
+      setIsAuthenticated(false);
+      setCurrentPage("home");
+      setMessages([{ from: "bot", text: "Hi! I'm Prof. V. Ask me anything about your courses or assignments." }]);
+      setChatOpen(false);
+      showNotification('info', 'Signed out successfully');
+    } catch (error) {
+      showNotification('error', 'Failed to sign out');
+    }
+  }, [showNotification]);
+
+  // Form submission handlers with error handling
+  const handleUploadSubmit = useCallback(async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    
+    const formData = new FormData(e.currentTarget);
+    const title = formData.get('title') as string;
+    const subject = formData.get('subject') as string;
+    const dueDate = formData.get('dueDate') as string;
+
+    let hasErrors = false;
+    if (!validateRequired(title, 'uploadTitle')) hasErrors = true;
+    if (!validateRequired(subject, 'uploadSubject')) hasErrors = true;
+    if (!validateRequired(dueDate, 'uploadDueDate')) hasErrors = true;
+
+    if (hasErrors) return;
+
+    await safeAsync(async () => {
+      await new Promise((resolve, reject) => {
+        setTimeout(() => {
+          if (Math.random() > 0.1) {
+            resolve(true);
+          } else {
+            reject(new Error('Failed to submit assignment'));
+          }
+        }, 1500);
+      });
+      
+      showNotification('success', 'Assignment submitted successfully! You will receive feedback within 24 hours.');
+      e.currentTarget.reset();
+    }, 'upload');
+  }, [validateRequired, safeAsync, showNotification]);
+
+  const handleTutorSubmit = useCallback(async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    
+    const formData = new FormData(e.currentTarget);
+    const subject = formData.get('subject') as string;
+    const level = formData.get('level') as string;
+
+    let hasErrors = false;
+    if (!validateRequired(subject, 'tutorSubject')) hasErrors = true;
+    if (!validateRequired(level, 'tutorLevel')) hasErrors = true;
+
+    if (hasErrors) return;
+
+    await safeAsync(async () => {
+      await new Promise((resolve, reject) => {
+        setTimeout(() => {
+          if (Math.random() > 0.1) {
+            resolve(true);
+          } else {
+            reject(new Error('Failed to submit tutor request'));
+          }
+        }, 2000);
+      });
+      
+      showNotification('success', 'Tutor request submitted! We will match you with a suitable tutor and contact you shortly.');
+      e.currentTarget.reset();
+    }, 'tutor');
+  }, [validateRequired, safeAsync, showNotification]);
+
+  const handleMediaUpload = useCallback(async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    
+    await safeAsync(async () => {
+      await new Promise((resolve, reject) => {
+        setTimeout(() => {
+          if (Math.random() > 0.15) {
+            resolve(true);
+          } else {
+            reject(new Error('Failed to process media file'));
+          }
+        }, 3000);
+      });
+
+      const mockKeyPoints = [
+        "Main concept: Photosynthesis converts light energy to chemical energy",
+        "Key process: 6CO2 + 6H2O + light energy → C6H12O6 + 6O2",
+        "Location: Occurs in chloroplasts of plant cells",
+        "Two stages: Light reactions and Calvin cycle",
+        "Importance: Primary source of energy for most life on Earth"
+      ];
+      
+      const newFile = {
+        name: "Biology Lecture - Photosynthesis",
+        type: "video",
+        keyPoints: mockKeyPoints
+      };
+      
+      setUploadedFiles(prev => [...prev, newFile]);
+      showNotification('success', 'Media file processed successfully! Key points extracted.');
+    }, 'media');
+  }, [safeAsync, showNotification]);
+
+  // Error Display Component
+  const ErrorDisplay = ({ field }: { field: string }) => {
+    if (!errors[field]) return null;
+    return (
+      <div className="text-red-600 dark:text-red-400 text-sm mt-1 flex items-center gap-1">
+        <span>⚠</span>
+        <span>{errors[field]}</span>
+      </div>
+    );
+  };
+
+  // Loading Indicator Component
+  const LoadingSpinner = ({ size = "sm" }: { size?: "sm" | "md" | "lg" }) => {
+    const sizeClass = size === "lg" ? "w-6 h-6" : size === "md" ? "w-4 h-4" : "w-3 h-3";
+    return (
+      <div className={`${sizeClass} border-2 border-current border-t-transparent rounded-full animate-spin`}></div>
+    );
+  };
+
+  // Notification Component
+  const NotificationBanner = () => {
+    if (!notification) return null;
+
+    const bgColor = {
+      success: 'bg-green-100 border-green-400 text-green-800 dark:bg-green-900 dark:border-green-600 dark:text-green-200',
+      error: 'bg-red-100 border-red-400 text-red-800 dark:bg-red-900 dark:border-red-600 dark:text-red-200',
+      info: 'bg-blue-100 border-blue-400 text-blue-800 dark:bg-blue-900 dark:border-blue-600 dark:text-blue-200'
     };
-    
-    setUploadedFiles(prev => [...prev, newFile]);
-    alert('Media file processed successfully! Key points extracted.');
+
+    return (
+      <div className={`fixed top-4 right-4 max-w-sm p-4 border rounded-lg shadow-lg z-50 ${bgColor[notification.type]}`}>
+        <div className="flex items-center justify-between">
+          <span>{notification.message}</span>
+          <button 
+            onClick={() => setNotification(null)}
+            className="ml-2 text-lg leading-none hover:opacity-75"
+          >
+            ×
+          </button>
+        </div>
+      </div>
+    );
   };
+
+  // Landing Page Component
+  const LandingPage = () => (
+    <div className="min-h-screen flex flex-col">
+      <header className="p-6 flex items-center justify-between border-b dark:border-gray-700">
+        <div className="flex items-center gap-3">
+          <div className="rounded-md bg-gradient-to-r from-indigo-500 to-emerald-400 p-2 text-white font-bold">VP</div>
+          <h1 className="text-xl font-semibold">VirtualProfessor</h1>
+        </div>
+        <button
+          onClick={() => setTheme((t) => (t === "dark" ? "light" : "dark"))}
+          aria-label="Toggle theme"
+          className="px-3 py-2 rounded-md border dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+        >
+          {theme === "dark" ? "☀️" : "🌙"}
+        </button>
+      </header>
+
+      <div className="flex-1 flex items-center justify-center px-6 py-12">
+        <div className="max-w-4xl mx-auto grid gap-12 lg:grid-cols-2 items-center">
+          <div>
+            <h2 className="text-5xl font-extrabold leading-tight mb-6">
+              Your personal virtual professor for any subject
+            </h2>
+            <p className="text-xl text-gray-600 dark:text-gray-300 mb-8">
+              Ask questions, get micro-lessons, track your study schedule, and get help with assignments — all in one place.
+            </p>
+            <div className="flex flex-wrap gap-6 text-sm text-gray-600 dark:text-gray-400">
+              <div className="flex items-center gap-2">
+                <span className="text-green-500">✓</span>
+                <span>AI-powered tutoring</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-green-500">✓</span>
+                <span>Progress tracking</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-green-500">✓</span>
+                <span>Study groups</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-green-500">✓</span>
+                <span>Expert tutors</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white dark:bg-gray-800 p-8 rounded-xl border dark:border-gray-700 shadow-lg">
+            <div className="text-center mb-6">
+              <h3 className="text-2xl font-bold">Get Started Today</h3>
+              <p className="text-gray-600 dark:text-gray-300 mt-2">
+                {isSignUp ? "Create your account to unlock personalized learning" : "Welcome back! Sign in to continue learning"}
+              </p>
+            </div>
+
+            <div className="flex gap-2 mb-6">
+              <button 
+                onClick={() => setIsSignUp(true)}
+                className={`flex-1 px-4 py-2 rounded-md transition-colors ${
+                  isSignUp ? 'bg-indigo-600 text-white' : 'border dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800'
+                }`}
+              >
+                Sign Up
+              </button>
+              <button 
+                onClick={() => setIsSignUp(false)}
+                className={`flex-1 px-4 py-2 rounded-md transition-colors ${
+                  !isSignUp ? 'bg-indigo-600 text-white' : 'border dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800'
+                }`}
+              >
+                Sign In
+              </button>
+            </div>
+
+            <form onSubmit={handleAuthSubmit} className="space-y-4">
+              {isSignUp && (
+                <div>
+                  <label className="block text-sm font-medium mb-1">Full Name</label>
+                  <input 
+                    name="fullName"
+                    type="text" 
+                    className="w-full px-3 py-2 border rounded-md dark:bg-gray-700 dark:border-gray-600 focus:ring-2 focus:ring-indigo-500" 
+                    placeholder="Enter your full name" 
+                  />
+                  <ErrorDisplay field="fullName" />
+                </div>
+              )}
+              
+              <div>
+                <label className="block text-sm font-medium mb-1">Email Address</label>
+                <input 
+                  name="email"
+                  type="email" 
+                  className="w-full px-3 py-2 border rounded-md dark:bg-gray-700 dark:border-gray-600 focus:ring-2 focus:ring-indigo-500" 
+                  placeholder="Enter your email" 
+                />
+                <ErrorDisplay field="email" />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium mb-1">Password</label>
+                <input 
+                  name="password"
+                  type="password" 
+                  className="w-full px-3 py-2 border rounded-md dark:bg-gray-700 dark:border-gray-600 focus:ring-2 focus:ring-indigo-500" 
+                  placeholder="Enter your password" 
+                />
+                <ErrorDisplay field="password" />
+              </div>
+              
+              {isSignUp && (
+                <div>
+                  <label className="block text-sm font-medium mb-1">Confirm Password</label>
+                  <input 
+                    name="confirmPassword"
+                    type="password" 
+                    className="w-full px-3 py-2 border rounded-md dark:bg-gray-700 dark:border-gray-600 focus:ring-2 focus:ring-indigo-500" 
+                    placeholder="Confirm your password" 
+                  />
+                  <ErrorDisplay field="confirmPassword" />
+                </div>
+              )}
+              
+              <button 
+                type="submit" 
+                disabled={loading.auth}
+                className="w-full px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                {loading.auth && <LoadingSpinner />}
+                {isSignUp ? 'Create Account & Start Learning' : 'Sign In to Dashboard'}
+              </button>
+              <ErrorDisplay field="auth" />
+            </form>
+
+            {!isSignUp && (
+              <div className="mt-4 text-center">
+                <a href="#" className="text-sm text-indigo-600 dark:text-indigo-400 hover:underline">
+                  Forgot your password?
+                </a>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <footer className="p-6 text-sm text-gray-500 dark:text-gray-400 border-t dark:border-gray-700">
+        <div className="max-w-4xl mx-auto flex justify-between">
+          <div>© 2025 VirtualProfessor</div>
+          <div className="flex gap-4">
+            <a href="#privacy" className="hover:text-gray-700 dark:hover:text-gray-300">Privacy</a>
+            <a href="#terms" className="hover:text-gray-700 dark:hover:text-gray-300">Terms</a>
+            <a href="#contact" className="hover:text-gray-700 dark:hover:text-gray-300">Contact</a>
+          </div>
+        </div>
+      </footer>
+    </div>
+  );
 
   // Main Header Component
   const Header = () => (
@@ -100,24 +535,176 @@ export default function VirtualProfessorHomepage() {
         <button
           onClick={() => setTheme((t) => (t === "dark" ? "light" : "dark"))}
           aria-label="Toggle theme"
-          className="px-3 py-2 rounded-md border dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800"
+          className="px-3 py-2 rounded-md border dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
         >
           {theme === "dark" ? "☀️" : "🌙"}
         </button>
         <button 
           onClick={() => showPage("home")} 
-          className="px-3 py-2 rounded-md border dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800"
+          className="px-3 py-2 rounded-md border dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
         >
           Home
         </button>
         <button 
-          onClick={() => showPage("auth")} 
-          className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:opacity-95"
+          onClick={handleLogout} 
+          className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
         >
-          Sign up
+          Sign Out
         </button>
       </nav>
     </header>
+  );
+
+  // Navigation Menu
+  const NavigationMenu = () => {
+    const navigationItems = [
+      { id: "home", label: "Home", icon: "🏠" },
+      { id: "upload", label: "Upload", icon: "📝" },
+      { id: "tutor", label: "Tutor", icon: "👨‍🏫" },
+      { id: "study-group", label: "Groups", icon: "👥" },
+      { id: "progress", label: "Progress", icon: "📊" },
+      { id: "gpa", label: "GPA", icon: "🎯" },
+      { id: "media", label: "Media", icon: "🎥" }
+    ];
+
+    return (
+      <nav className="max-w-6xl mx-auto px-6 py-3 border-b dark:border-gray-700">
+        <div className="flex gap-2 overflow-x-auto scrollbar-hide">
+          {navigationItems.map((nav) => (
+            <button
+              key={nav.id}
+              onClick={() => showPage(nav.id)}
+              className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-all whitespace-nowrap text-sm font-medium ${
+                currentPage === nav.id 
+                  ? "bg-indigo-600 text-white shadow-md" 
+                  : "border dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 hover:border-indigo-400 dark:hover:border-indigo-500"
+              }`}
+            >
+              <span className="text-base">{nav.icon}</span>
+              <span className="hidden sm:inline">{nav.label}</span>
+            </button>
+          ))}
+        </div>
+      </nav>
+    );
+  };
+
+  // Homepage Content
+  const HomePage = () => (
+    <section className="max-w-6xl mx-auto px-6 grid gap-8 grid-cols-1 lg:grid-cols-3 items-start">
+      <div className="lg:col-span-2">
+        <h2 className="text-4xl font-extrabold leading-tight">Your personal virtual professor for any subject</h2>
+        <p className="mt-3 text-lg text-gray-600 dark:text-gray-300">Ask questions, get micro-lessons, track your study schedule and get help with assignments — all in one place.</p>
+
+        <div className="mt-6">
+          <label htmlFor="search" className="sr-only">Search</label>
+          <div className="relative">
+            <input
+              id="search"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              onKeyDown={(e) => { 
+                if (e.key === 'Enter') { 
+                  console.log("Main search query:", query);
+                }
+              }}
+              placeholder="Search subjects, topics or ask a question..."
+              className="w-full rounded-md border px-4 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-400 dark:bg-gray-800 dark:border-gray-700"
+              aria-label="Search subjects or ask a question"
+            />
+            <button
+              onClick={() => console.log("Main search query:", query)}
+              className="absolute right-2 top-2 px-3 py-1 rounded bg-indigo-600 text-white hover:bg-indigo-700 transition-colors"
+              aria-label="Search"
+            >
+              Search
+            </button>
+          </div>
+
+          {suggestions.length > 0 && (
+            <ul className="mt-2 bg-white dark:bg-gray-800 border rounded-md p-2 shadow-sm">
+              {suggestions.map((s) => (
+                <li key={s} className="py-1 px-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md cursor-pointer" onClick={() => setQuery(s)}>
+                  {s}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+
+        <h3 className="mt-8 text-xl font-semibold">Featured micro-lessons</h3>
+        <div className="mt-4 grid gap-4 grid-cols-1 sm:grid-cols-2">
+          {[
+            { title: "Intro to Algebra", minutes: 6 },
+            { title: "Essay Writing Basics", minutes: 8 },
+            { title: "Critical Thinking", minutes: 12 },
+            { title: "World History Overview", minutes: 10 },
+          ].map((c) => (
+            <article key={c.title} className="p-4 border rounded-md hover:shadow-lg transition-shadow dark:border-gray-700 bg-white dark:bg-gray-800">
+              <h4 className="font-semibold">{c.title}</h4>
+              <p className="text-sm text-gray-500 dark:text-gray-300 mt-1">{c.minutes} min • micro-lesson</p>
+              <div className="mt-3 flex gap-2">
+                <button className="px-3 py-1 rounded bg-emerald-500 text-white hover:bg-emerald-600 transition-colors">Start</button>
+                <button className="px-3 py-1 rounded border dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">Preview</button>
+              </div>
+            </article>
+          ))}
+        </div>
+      </div>
+
+      <aside>
+        <div className="p-4 border rounded-md bg-white dark:bg-gray-800 dark:border-gray-700">
+          <h4 className="font-semibold">Today</h4>
+          <ul className="mt-3 text-sm text-gray-600 dark:text-gray-300 space-y-2">
+            <li>09:00 — Review class notes</li>
+            <li>13:00 — Group project meeting</li>
+            <li>16:00 — Exam prep session</li>
+          </ul>
+          <div className="mt-4 flex gap-2">
+            <button className="flex-1 px-3 py-2 rounded bg-indigo-600 text-white hover:bg-indigo-700 transition-colors">Open schedule</button>
+            <button className="px-3 py-2 rounded border dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors" onClick={() => setChatOpen((v) => !v)}>
+              {chatOpen ? "Close chat" : "Chat"}
+            </button>
+          </div>
+        </div>
+
+        <div className="mt-4 p-4 border rounded-md bg-white dark:bg-gray-800 dark:border-gray-700">
+          <h4 className="font-semibold">Quick actions</h4>
+          <div className="mt-3 grid gap-2">
+            <button 
+              onClick={() => showPage("upload")}
+              className="text-left px-3 py-2 rounded border dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+            >
+              📝 Upload assignment
+            </button>
+            <button 
+              onClick={() => showPage("tutor")}
+              className="text-left px-3 py-2 rounded border dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+            >
+              👨‍🏫 Request tutor
+            </button>
+            <button 
+              onClick={() => showPage("study-group")}
+              className="text-left px-3 py-2 rounded border dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+            >
+              👥 Join study group
+            </button>
+            <button 
+              onClick={() => showPage("progress")}
+              className="text-left px-3 py-2 rounded border dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+            >
+              📊 Track progress
+            </button>
+            <button 
+              onClick={() => showPage("gpa")}
+              className="text-left px-3 py-2 rounded border dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+            >
+              🎯 GPA tracker
+            </button>
+          </div>
+        </div>
+      </aside>
+    </section>
   );
 
   // Progress Tracking Page
@@ -221,10 +808,10 @@ export default function VirtualProfessorHomepage() {
             </div>
             
             <div className="flex gap-2 mt-4">
-              <button className="flex-1 px-3 py-2 bg-indigo-600 text-white rounded-md hover:opacity-95 text-sm">
+              <button className="flex-1 px-3 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors text-sm">
                 Continue Learning
               </button>
-              <button className="px-3 py-2 border dark:border-gray-700 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 text-sm">
+              <button className="px-3 py-2 border dark:border-gray-700 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors text-sm">
                 View Details
               </button>
             </div>
@@ -338,16 +925,16 @@ export default function VirtualProfessorHomepage() {
           <form className="space-y-3">
             <div>
               <label className="block text-sm font-medium mb-1">Course Name</label>
-              <input type="text" className="w-full px-3 py-2 border rounded-md dark:bg-gray-700 dark:border-gray-600" placeholder="Enter course name" />
+              <input type="text" className="w-full px-3 py-2 border rounded-md dark:bg-gray-700 dark:border-gray-600 focus:ring-2 focus:ring-indigo-500" placeholder="Enter course name" />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-sm font-medium mb-1">Credits</label>
-                <input type="number" className="w-full px-3 py-2 border rounded-md dark:bg-gray-700 dark:border-gray-600" placeholder="3" />
+                <input type="number" className="w-full px-3 py-2 border rounded-md dark:bg-gray-700 dark:border-gray-600 focus:ring-2 focus:ring-indigo-500" placeholder="3" />
               </div>
               <div>
                 <label className="block text-sm font-medium mb-1">Grade</label>
-                <select className="w-full px-3 py-2 border rounded-md dark:bg-gray-700 dark:border-gray-600">
+                <select className="w-full px-3 py-2 border rounded-md dark:bg-gray-700 dark:border-gray-600 focus:ring-2 focus:ring-indigo-500">
                   <option>A (4.0)</option>
                   <option>A- (3.7)</option>
                   <option>B+ (3.3)</option>
@@ -358,7 +945,7 @@ export default function VirtualProfessorHomepage() {
                 </select>
               </div>
             </div>
-            <button type="submit" className="w-full px-4 py-2 bg-indigo-600 text-white rounded-md hover:opacity-95">
+            <button type="submit" className="w-full px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors">
               Calculate Impact
             </button>
           </form>
@@ -368,9 +955,8 @@ export default function VirtualProfessorHomepage() {
   );
 
   // Media Analysis Page
-  const MediaAnalysisPage = () => {
-    return (
-      <section className="max-w-4xl mx-auto px-6 py-8">
+  const MediaAnalysisPage = () => (
+    <section className="max-w-4xl mx-auto px-6 py-8">
       <div className="text-center mb-8">
         <h2 className="text-3xl font-bold">Media Analysis & Key Points</h2>
         <p className="mt-3 text-gray-600 dark:text-gray-300">Upload video or voice memos to extract key learning points</p>
@@ -382,7 +968,7 @@ export default function VirtualProfessorHomepage() {
           <form onSubmit={handleMediaUpload} className="space-y-4">
             <div>
               <label className="block text-sm font-medium mb-1">Media Type</label>
-              <select className="w-full px-3 py-2 border rounded-md dark:bg-gray-700 dark:border-gray-600">
+              <select className="w-full px-3 py-2 border rounded-md dark:bg-gray-700 dark:border-gray-600 focus:ring-2 focus:ring-indigo-500">
                 <option>Video File</option>
                 <option>Audio File</option>
                 <option>Voice Memo</option>
@@ -391,7 +977,7 @@ export default function VirtualProfessorHomepage() {
             
             <div>
               <label className="block text-sm font-medium mb-1">Subject Area</label>
-              <select className="w-full px-3 py-2 border rounded-md dark:bg-gray-700 dark:border-gray-600">
+              <select className="w-full px-3 py-2 border rounded-md dark:bg-gray-700 dark:border-gray-600 focus:ring-2 focus:ring-indigo-500">
                 <option>Biology</option>
                 <option>Chemistry</option>
                 <option>Physics</option>
@@ -405,7 +991,7 @@ export default function VirtualProfessorHomepage() {
             
             <div>
               <label className="block text-sm font-medium mb-1">Media File</label>
-              <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-8 text-center">
+              <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-8 text-center hover:border-indigo-400 transition-colors">
                 <div className="text-4xl mb-4">🎥</div>
                 <h3 className="text-lg font-medium mb-2">Drop media files here or click to browse</h3>
                 <p className="text-sm text-gray-500 dark:text-gray-400">Supported: MP4, AVI, MP3, WAV, M4A</p>
@@ -416,15 +1002,21 @@ export default function VirtualProfessorHomepage() {
             <div>
               <label className="block text-sm font-medium mb-1">Additional Context (Optional)</label>
               <textarea 
-                className="w-full px-3 py-2 border rounded-md dark:bg-gray-700 dark:border-gray-600" 
+                className="w-full px-3 py-2 border rounded-md dark:bg-gray-700 dark:border-gray-600 focus:ring-2 focus:ring-indigo-500" 
                 rows={3}
                 placeholder="Any specific topics or concepts you want us to focus on?"
               />
             </div>
             
-            <button type="submit" className="w-full px-4 py-2 bg-indigo-600 text-white rounded-md hover:opacity-95">
+            <button 
+              type="submit" 
+              disabled={loading.media}
+              className="w-full px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            >
+              {loading.media && <LoadingSpinner />}
               Upload & Analyze
             </button>
+            <ErrorDisplay field="media" />
           </form>
         </div>
 
@@ -495,13 +1087,13 @@ export default function VirtualProfessorHomepage() {
                 </div>
                 
                 <div className="flex gap-2 mt-4">
-                  <button className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:opacity-95 text-sm">
+                  <button className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors text-sm">
                     Export Notes
                   </button>
-                  <button className="px-4 py-2 border dark:border-gray-700 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 text-sm">
+                  <button className="px-4 py-2 border dark:border-gray-700 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors text-sm">
                     Create Study Guide
                   </button>
-                  <button className="px-4 py-2 border dark:border-gray-700 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 text-sm">
+                  <button className="px-4 py-2 border dark:border-gray-700 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors text-sm">
                     Share Notes
                   </button>
                 </div>
@@ -511,215 +1103,7 @@ export default function VirtualProfessorHomepage() {
         </div>
       )}
     </section>
-    );
-  };
-
-  // Navigation Menu
-  const NavigationMenu = () => {
-    const navigationItems = [
-      { id: "home", label: "Home", icon: "🏠" },
-      { id: "auth", label: "Auth", icon: "👤" },
-      { id: "upload", label: "Upload", icon: "📝" },
-      { id: "tutor", label: "Tutor", icon: "👨‍🏫" },
-      { id: "study-group", label: "Groups", icon: "👥" },
-      { id: "progress", label: "Progress", icon: "📊" },
-      { id: "gpa", label: "GPA", icon: "🎯" },
-      { id: "media", label: "Media", icon: "🎥" }
-    ];
-
-    return (
-      <nav className="max-w-6xl mx-auto px-6 py-3 border-b dark:border-gray-700">
-        <div className="flex gap-2 overflow-x-auto scrollbar-hide">
-          {navigationItems.map((nav) => (
-            <button
-              key={nav.id}
-              onClick={() => showPage(nav.id)}
-              className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-all whitespace-nowrap text-sm font-medium ${
-                currentPage === nav.id 
-                  ? "bg-indigo-600 text-white shadow-md" 
-                  : "border dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 hover:border-indigo-400 dark:hover:border-indigo-500"
-              }`}
-            >
-              <span className="text-base">{nav.icon}</span>
-              <span className="hidden sm:inline">{nav.label}</span>
-            </button>
-          ))}
-        </div>
-      </nav>
-    );
-  };
-
-  // Homepage Content
-  const HomePage = () => (
-    <section className="max-w-6xl mx-auto px-6 grid gap-8 grid-cols-1 lg:grid-cols-3 items-start">
-      <div className="lg:col-span-2">
-        <h2 className="text-4xl font-extrabold leading-tight">Your personal virtual professor for any subject</h2>
-        <p className="mt-3 text-lg text-gray-600 dark:text-gray-300">Ask questions, get micro-lessons, track your study schedule and get help with assignments — all in one place.</p>
-
-        <div className="mt-6">
-          <label htmlFor="search" className="sr-only">Search</label>
-          <div className="relative">
-            <input
-              id="search"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              onKeyDown={(e) => { if (e.key === 'Enter') sendMessage(query); }}
-              placeholder="Search subjects, topics or ask a question..."
-              className="w-full rounded-md border px-4 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-400 dark:bg-gray-800 dark:border-gray-700"
-              aria-label="Search subjects or ask a question"
-            />
-            <button
-              onClick={() => sendMessage(query)}
-              className="absolute right-2 top-2 px-3 py-1 rounded bg-indigo-600 text-white hover:opacity-95"
-              aria-label="Ask question"
-            >
-              Ask
-            </button>
-          </div>
-
-          {suggestions.length > 0 && (
-            <ul className="mt-2 bg-white dark:bg-gray-800 border rounded-md p-2 shadow-sm">
-              {suggestions.map((s) => (
-                <li key={s} className="py-1 px-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md cursor-pointer" onClick={() => sendMessage(s)}>
-                  {s}
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-
-        {/* Course grid (sample) */}
-        <h3 className="mt-8 text-xl font-semibold">Featured micro-lessons</h3>
-        <div className="mt-4 grid gap-4 grid-cols-1 sm:grid-cols-2">
-          {[
-            { title: "Intro to Algebra", minutes: 6 },
-            { title: "Essay Writing Basics", minutes: 8 },
-            { title: "Critical Thinking", minutes: 12 },
-            { title: "World History Overview", minutes: 10 },
-          ].map((c) => (
-            <article key={c.title} className="p-4 border rounded-md hover:shadow-lg transition-shadow dark:border-gray-700 bg-white dark:bg-gray-800">
-              <h4 className="font-semibold">{c.title}</h4>
-              <p className="text-sm text-gray-500 dark:text-gray-300 mt-1">{c.minutes} min • micro-lesson</p>
-              <div className="mt-3 flex gap-2">
-                <button className="px-3 py-1 rounded bg-emerald-500 text-white hover:opacity-95">Start</button>
-                <button className="px-3 py-1 rounded border dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800">Preview</button>
-              </div>
-            </article>
-          ))}
-        </div>
-      </div>
-
-      {/* Right column: schedule card + quick actions */}
-      <aside>
-        <div className="p-4 border rounded-md bg-white dark:bg-gray-800 dark:border-gray-700">
-          <h4 className="font-semibold">Today</h4>
-          <ul className="mt-3 text-sm text-gray-600 dark:text-gray-300 space-y-2">
-            <li>09:00 — Review class notes</li>
-            <li>13:00 — Group project meeting</li>
-            <li>16:00 — Exam prep session</li>
-          </ul>
-          <div className="mt-4 flex gap-2">
-            <button className="flex-1 px-3 py-2 rounded bg-indigo-600 text-white hover:opacity-95">Open schedule</button>
-            <button className="px-3 py-2 rounded border dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800" onClick={() => setChatOpen((v) => !v)}>
-              {chatOpen ? "Close chat" : "Chat"}
-            </button>
-          </div>
-        </div>
-
-        <div className="mt-4 p-4 border rounded-md bg-white dark:bg-gray-800 dark:border-gray-700">
-          <h4 className="font-semibold">Quick actions</h4>
-          <div className="mt-3 grid gap-2">
-            <button 
-              onClick={() => showPage("upload")}
-              className="text-left px-3 py-2 rounded border dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800"
-            >
-              📝 Upload assignment
-            </button>
-            <button 
-              onClick={() => showPage("tutor")}
-              className="text-left px-3 py-2 rounded border dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800"
-            >
-              👨‍🏫 Request tutor
-            </button>
-            <button 
-              onClick={() => showPage("study-group")}
-              className="text-left px-3 py-2 rounded border dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800"
-            >
-              👥 Join study group
-            </button>
-            <button 
-              onClick={() => showPage("progress")}
-              className="text-left px-3 py-2 rounded border dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800"
-            >
-              📊 Track progress
-            </button>
-            <button 
-              onClick={() => showPage("gpa")}
-              className="text-left px-3 py-2 rounded border dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800"
-            >
-              🎯 GPA tracker
-            </button>
-          </div>
-        </div>
-      </aside>
-    </section>
-  );
-
-  // Auth Page
-  const AuthPage = () => (
-    <section className="max-w-md mx-auto px-6 py-8">
-      <div className="text-center mb-8">
-        <h2 className="text-3xl font-bold">Welcome to VirtualProfessor</h2>
-        <p className="mt-3 text-gray-600 dark:text-gray-300">Sign up to access personalized learning and expert tutoring</p>
-      </div>
-
-      <div className="bg-white dark:bg-gray-800 p-6 rounded-lg border dark:border-gray-700">
-        <div className="flex gap-2 mb-6">
-          <button 
-            onClick={() => setIsSignUp(true)}
-            className={`flex-1 px-4 py-2 rounded-md ${isSignUp ? 'bg-indigo-600 text-white' : 'border dark:border-gray-700'}`}
-          >
-            Sign Up
-          </button>
-          <button 
-            onClick={() => setIsSignUp(false)}
-            className={`flex-1 px-4 py-2 rounded-md ${!isSignUp ? 'bg-indigo-600 text-white' : 'border dark:border-gray-700'}`}
-          >
-            Sign In
-          </button>
-        </div>
-
-        <form onSubmit={handleAuthSubmit} className="space-y-4">
-          {isSignUp && (
-            <div>
-              <label className="block text-sm font-medium mb-1">Full Name</label>
-              <input type="text" required className="w-full px-3 py-2 border rounded-md dark:bg-gray-700 dark:border-gray-600" placeholder="Enter your full name" />
-            </div>
-          )}
-          
-          <div>
-            <label className="block text-sm font-medium mb-1">Email Address</label>
-            <input type="email" required className="w-full px-3 py-2 border rounded-md dark:bg-gray-700 dark:border-gray-600" placeholder="Enter your email" />
-          </div>
-          
-          <div>
-            <label className="block text-sm font-medium mb-1">Password</label>
-            <input type="password" required className="w-full px-3 py-2 border rounded-md dark:bg-gray-700 dark:border-gray-600" placeholder="Enter your password" />
-          </div>
-          
-          {isSignUp && (
-            <div>
-              <label className="block text-sm font-medium mb-1">Confirm Password</label>
-              <input type="password" required className="w-full px-3 py-2 border rounded-md dark:bg-gray-700 dark:border-gray-600" placeholder="Confirm your password" />
-            </div>
-          )}
-          
-          <button type="submit" className="w-full px-4 py-2 bg-indigo-600 text-white rounded-md hover:opacity-95">
-            {isSignUp ? 'Create Account' : 'Sign In'}
-          </button>
-        </form>
-      </div>
-    </section>
+    
   );
 
   // Upload Assignment Page
@@ -734,12 +1118,21 @@ export default function VirtualProfessorHomepage() {
         <form onSubmit={handleUploadSubmit} className="space-y-6">
           <div>
             <label className="block text-sm font-medium mb-1">Assignment Title</label>
-            <input type="text" required className="w-full px-3 py-2 border rounded-md dark:bg-gray-700 dark:border-gray-600" placeholder="Enter assignment title" />
+            <input 
+              name="title"
+              type="text" 
+              className="w-full px-3 py-2 border rounded-md dark:bg-gray-700 dark:border-gray-600 focus:ring-2 focus:ring-indigo-500" 
+              placeholder="Enter assignment title" 
+            />
+            <ErrorDisplay field="uploadTitle" />
           </div>
           
           <div>
             <label className="block text-sm font-medium mb-1">Subject</label>
-            <select required className="w-full px-3 py-2 border rounded-md dark:bg-gray-700 dark:border-gray-600">
+            <select 
+              name="subject"
+              className="w-full px-3 py-2 border rounded-md dark:bg-gray-700 dark:border-gray-600 focus:ring-2 focus:ring-indigo-500"
+            >
               <option value="">Select a subject</option>
               <option>Mathematics</option>
               <option>Science</option>
@@ -748,16 +1141,22 @@ export default function VirtualProfessorHomepage() {
               <option>Computer Science</option>
               <option>Other</option>
             </select>
+            <ErrorDisplay field="uploadSubject" />
           </div>
           
           <div>
             <label className="block text-sm font-medium mb-1">Due Date</label>
-            <input type="date" required className="w-full px-3 py-2 border rounded-md dark:bg-gray-700 dark:border-gray-600" />
+            <input 
+              name="dueDate"
+              type="date" 
+              className="w-full px-3 py-2 border rounded-md dark:bg-gray-700 dark:border-gray-600 focus:ring-2 focus:ring-indigo-500" 
+            />
+            <ErrorDisplay field="uploadDueDate" />
           </div>
           
           <div>
             <label className="block text-sm font-medium mb-1">Assignment Files</label>
-            <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-8 text-center">
+            <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-8 text-center hover:border-indigo-400 transition-colors">
               <div className="text-4xl mb-4">📁</div>
               <h3 className="text-lg font-medium mb-2">Drop files here or click to browse</h3>
               <p className="text-sm text-gray-500 dark:text-gray-400">Supported formats: PDF, DOC, DOCX, TXT</p>
@@ -768,15 +1167,21 @@ export default function VirtualProfessorHomepage() {
           <div>
             <label className="block text-sm font-medium mb-1">Additional Instructions</label>
             <textarea 
-              className="w-full px-3 py-2 border rounded-md dark:bg-gray-700 dark:border-gray-600" 
+              className="w-full px-3 py-2 border rounded-md dark:bg-gray-700 dark:border-gray-600 focus:ring-2 focus:ring-indigo-500" 
               rows={4}
               placeholder="Any specific requirements or questions about this assignment?"
             />
           </div>
           
-          <button type="submit" className="w-full px-4 py-2 bg-indigo-600 text-white rounded-md hover:opacity-95">
+          <button 
+            type="submit" 
+            disabled={loading.upload}
+            className="w-full px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+          >
+            {loading.upload && <LoadingSpinner />}
             Submit Assignment
           </button>
+          <ErrorDisplay field="upload" />
         </form>
       </div>
     </section>
@@ -795,7 +1200,10 @@ export default function VirtualProfessorHomepage() {
           <form onSubmit={handleTutorSubmit} className="space-y-4">
             <div>
               <label className="block text-sm font-medium mb-1">Subject Area</label>
-              <select required className="w-full px-3 py-2 border rounded-md dark:bg-gray-700 dark:border-gray-600">
+              <select 
+                name="subject"
+                className="w-full px-3 py-2 border rounded-md dark:bg-gray-700 dark:border-gray-600 focus:ring-2 focus:ring-indigo-500"
+              >
                 <option value="">Select subject</option>
                 <option>Mathematics</option>
                 <option>Physics</option>
@@ -807,22 +1215,27 @@ export default function VirtualProfessorHomepage() {
                 <option>Economics</option>
                 <option>Other</option>
               </select>
+              <ErrorDisplay field="tutorSubject" />
             </div>
             
             <div>
               <label className="block text-sm font-medium mb-1">Learning Level</label>
-              <select required className="w-full px-3 py-2 border rounded-md dark:bg-gray-700 dark:border-gray-600">
+              <select 
+                name="level"
+                className="w-full px-3 py-2 border rounded-md dark:bg-gray-700 dark:border-gray-600 focus:ring-2 focus:ring-indigo-500"
+              >
                 <option value="">Select level</option>
                 <option>High School</option>
                 <option>Undergraduate</option>
                 <option>Graduate</option>
                 <option>Professional</option>
               </select>
+              <ErrorDisplay field="tutorLevel" />
             </div>
             
             <div>
               <label className="block text-sm font-medium mb-1">Session Type</label>
-              <select required className="w-full px-3 py-2 border rounded-md dark:bg-gray-700 dark:border-gray-600">
+              <select className="w-full px-3 py-2 border rounded-md dark:bg-gray-700 dark:border-gray-600 focus:ring-2 focus:ring-indigo-500">
                 <option>One-time session</option>
                 <option>Weekly sessions</option>
                 <option>Intensive course</option>
@@ -832,21 +1245,27 @@ export default function VirtualProfessorHomepage() {
             
             <div>
               <label className="block text-sm font-medium mb-1">Availability</label>
-              <input type="text" className="w-full px-3 py-2 border rounded-md dark:bg-gray-700 dark:border-gray-600" placeholder="e.g., Weekends, evenings, specific days" />
+              <input type="text" className="w-full px-3 py-2 border rounded-md dark:bg-gray-700 dark:border-gray-600 focus:ring-2 focus:ring-indigo-500" placeholder="e.g., Weekends, evenings, specific days" />
             </div>
             
             <div>
               <label className="block text-sm font-medium mb-1">Learning Goals</label>
               <textarea 
-                className="w-full px-3 py-2 border rounded-md dark:bg-gray-700 dark:border-gray-600" 
+                className="w-full px-3 py-2 border rounded-md dark:bg-gray-700 dark:border-gray-600 focus:ring-2 focus:ring-indigo-500" 
                 rows={3}
                 placeholder="What specific topics or skills would you like to focus on?"
               />
             </div>
             
-            <button type="submit" className="w-full px-4 py-2 bg-indigo-600 text-white rounded-md hover:opacity-95">
+            <button 
+              type="submit" 
+              disabled={loading.tutor}
+              className="w-full px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            >
+              {loading.tutor && <LoadingSpinner />}
               Find My Tutor
             </button>
+            <ErrorDisplay field="tutor" />
           </form>
         </div>
 
@@ -857,11 +1276,11 @@ export default function VirtualProfessorHomepage() {
           </div>
           <div className="bg-white dark:bg-gray-800 p-6 rounded-lg border dark:border-gray-700">
             <h3 className="font-semibold text-lg mb-2">⭐ Expert Tutors</h3>
-            <p className="text-sm text-gray-600 dark:text-gray-300">Certified professionals with proven track records</p>
+            <p className="text-sm text-gray-600 dark:text-gray-400">Certified professionals with proven track records</p>
           </div>
           <div className="bg-white dark:bg-gray-800 p-6 rounded-lg border dark:border-gray-700">
             <h3 className="font-semibold text-lg mb-2">📅 Flexible Scheduling</h3>
-            <p className="text-sm text-gray-600 dark:text-gray-300">Book sessions that fit your busy schedule</p>
+            <p className="text-sm text-gray-600 dark:text-gray-400">Book sessions that fit your busy schedule</p>
           </div>
         </div>
       </div>
@@ -879,7 +1298,7 @@ export default function VirtualProfessorHomepage() {
       <div className="mb-6">
         <input 
           type="text" 
-          className="w-full px-4 py-3 border rounded-md dark:bg-gray-800 dark:border-gray-700" 
+          className="w-full px-4 py-3 border rounded-md dark:bg-gray-800 dark:border-gray-700 focus:ring-2 focus:ring-indigo-500" 
           placeholder="Search study groups by subject or topic..." 
         />
       </div>
@@ -923,7 +1342,7 @@ export default function VirtualProfessorHomepage() {
               </div>
               <p className="text-sm text-gray-600 dark:text-gray-300 mt-2">{group.description}</p>
             </div>
-            <button className="ml-4 px-4 py-2 bg-indigo-600 text-white rounded-md hover:opacity-95">
+            <button className="ml-4 px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors">
               Join Group
             </button>
           </div>
@@ -931,16 +1350,18 @@ export default function VirtualProfessorHomepage() {
       </div>
 
       <div className="text-center mt-8">
-        <button className="px-6 py-3 border dark:border-gray-700 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800">
+        <button className="px-6 py-3 border dark:border-gray-700 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
           Create New Study Group
         </button>
       </div>
     </section>
   );
 
-  // Chat Widget (existing)
+  // Chat Widget (separate from main search)
   const ChatWidget = () => (
-    <div className={`fixed right-6 bottom-6 w-96 shadow-xl rounded-md overflow-hidden transform transition-all z-50 ${chatOpen ? "translate-y-0" : "translate-y-8 opacity-80"}`}>
+    <div className={`fixed right-6 bottom-6 w-96 shadow-xl rounded-md overflow-hidden transform transition-all z-50 ${
+      chatOpen ? "translate-y-0" : "translate-y-8 opacity-80"
+    }`}>
       <div className="bg-indigo-600 px-4 py-2 text-white flex items-center justify-between">
         <strong>Prof Chat</strong>
         <div className="flex gap-2">
@@ -950,22 +1371,42 @@ export default function VirtualProfessorHomepage() {
       <div className="bg-white dark:bg-gray-800 p-3 max-h-80 overflow-auto">
         {messages.map((m, i) => (
           <div key={i} className={`mb-2 ${m.from === "user" ? "text-right" : "text-left"}`}>
-            <div className={`inline-block px-3 py-2 rounded-md ${m.from === "user" ? "bg-indigo-50 dark:bg-indigo-900" : "bg-gray-100 dark:bg-gray-700"}`}>
+            <div className={`inline-block px-3 py-2 rounded-md ${
+              m.from === "user" ? "bg-indigo-50 dark:bg-indigo-900" : "bg-gray-100 dark:bg-gray-700"
+            }`}>
               {m.text}
             </div>
           </div>
         ))}
+        {loading.chat && (
+          <div className="text-left mb-2">
+            <div className="inline-block px-3 py-2 rounded-md bg-gray-100 dark:bg-gray-700 flex items-center gap-2">
+              <LoadingSpinner size="sm" />
+              <span>Prof. V is thinking...</span>
+            </div>
+          </div>
+        )}
       </div>
-      <div className="bg-gray-50 dark:bg-gray-900 p-2 flex gap-2">
-        <input
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          onKeyDown={(e) => { if (e.key === 'Enter') sendMessage(query); }}
-          placeholder="Type a question or topic..."
-          className="flex-1 rounded px-3 py-2 border dark:border-gray-700 bg-white dark:bg-gray-800"
-          aria-label="Type a chat message"
-        />
-        <button onClick={() => sendMessage(query)} className="px-3 py-2 rounded bg-indigo-600 text-white hover:opacity-95">Send</button>
+      <div className="bg-gray-50 dark:bg-gray-900 p-2">
+        <div className="flex gap-2">
+          <input
+            value={chatQuery}
+            onChange={(e) => setChatQuery(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter') sendMessage(chatQuery); }}
+            placeholder="Ask Prof. V a question..."
+            className="flex-1 rounded px-3 py-2 border dark:border-gray-700 bg-white dark:bg-gray-800 focus:ring-2 focus:ring-indigo-500"
+            aria-label="Type a chat message"
+            disabled={loading.chat}
+          />
+          <button 
+            onClick={() => sendMessage(chatQuery)} 
+            disabled={loading.chat}
+            className="px-3 py-2 rounded bg-indigo-600 text-white hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Send
+          </button>
+        </div>
+        <ErrorDisplay field="chat" />
       </div>
     </div>
   );
@@ -974,7 +1415,7 @@ export default function VirtualProfessorHomepage() {
   const Footer = () => (
     <footer className="max-w-6xl mx-auto p-6 text-sm text-gray-500 dark:text-gray-400 border-t dark:border-gray-700 mt-16">
       <div className="flex justify-between">
-        <div>© VirtualProfessor</div>
+        <div>© 2025 VirtualProfessor</div>
         <div className="flex gap-4">
           <a href="#privacy" className="underline hover:text-gray-700 dark:hover:text-gray-300">Privacy</a>
           <a href="#terms" className="underline hover:text-gray-700 dark:hover:text-gray-300">Terms</a>
@@ -983,19 +1424,31 @@ export default function VirtualProfessorHomepage() {
     </footer>
   );
 
+  // Main render logic
+  if (!isAuthenticated) {
+    return (
+      <main className="min-h-screen bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors">
+        <NotificationBanner />
+        <LandingPage />
+      </main>
+    );
+  }
+
   return (
     <main className="min-h-screen bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors">
+      <NotificationBanner />
       <Header />
       <NavigationMenu />
       
-      {currentPage === "home" && <HomePage />}
-      {currentPage === "auth" && <AuthPage />}
-      {currentPage === "upload" && <UploadPage />}
-      {currentPage === "tutor" && <TutorPage />}
-      {currentPage === "study-group" && <StudyGroupPage />}
-      {currentPage === "progress" && <ProgressPage />}
-      {currentPage === "gpa" && <GPAPage />}
-      {currentPage === "media" && <MediaAnalysisPage />}
+      <div className="py-8">
+        {currentPage === "home" && <HomePage />}
+        {currentPage === "upload" && <UploadPage />}
+        {currentPage === "tutor" && <TutorPage />}
+        {currentPage === "study-group" && <StudyGroupPage />}
+        {currentPage === "progress" && <ProgressPage />}
+        {currentPage === "gpa" && <GPAPage />}
+        {currentPage === "media" && <MediaAnalysisPage />}
+      </div>
       
       <ChatWidget />
       <Footer />
