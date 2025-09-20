@@ -33,3 +33,4 @@ export default function DB() {
 			</p>
 		</main>
 	);
+}
