@@ -65,7 +65,7 @@ export async function login(data: User): Promise<string | undefined> {
 }
 
 export default function() {
-	add_user("VINAY", "hunter2", "havethebestgoats@gmail.com")
+	add_user({ username: "VINAY", password: "hunter2", email: "havethebestgoats@gmail.com", name: "John Smith" });
 	return (
 		<main className="p-8">
 			<h1 className="text-3xl font-bold mb-2">DB Page</h1>
