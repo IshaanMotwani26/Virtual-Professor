@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { MongoClient } from "mongodb";
 import bcrypt from "bcrypt";
+import { createSession } from "../login/route";
 
 const uri = process.env.DB_URI!;
 const SALT_ROUNDS = 10;
@@ -20,12 +21,12 @@ export async function POST(req: Request) {
 	const userData: User = (await req.json()).userData;
 	if (await users.findOne({ username: userData.username })) {
 		console.log("Duplicate user signup detected");
-		NextResponse.json({ error: "User already signed up" }, { status: 409 });
+		return NextResponse.json({ error: "User already signed up" }, { status: 409 });
 	} else {
 		bcrypt.hash(userData.password, SALT_ROUNDS, function(err, hash) {
 			if (err) {
 				console.error(err);
-				NextResponse.json({ error: "Error hashing password, please report this error to Virtual Prof." }, { status: 400 });
+				return NextResponse.json({ error: "Error hashing password, please report this error to Virtual Prof." }, { status: 400 });
 			}
 			users.insertOne({
 				username: userData.username,
@@ -33,8 +34,8 @@ export async function POST(req: Request) {
 				name: userData.name,
 				hash: hash
 			});
+			return NextResponse.json({ "Set-Cookie": `session=${createSession(userData.username)}` }, { status: 200 });
 		});
 	}
-	client.close();
 }
 
