@@ -5,13 +5,19 @@ import Header from "@/components/header";
 
 export default function Vinay() {
   const [hasKey, setHasKey] = useState<boolean | null>(null);
+  const [statusJson, setStatusJson] = useState<any>(null);
+
+  // Text chat state
   const [input, setInput] = useState("");
   const [output, setOutput] = useState("");
-  const [statusJson, setStatusJson] = useState<any>(null);
-  const [error, setError] = useState<string>("");
+  const [error, setError] = useState("");
+
+  // Image OCR state
+  const [file, setFile] = useState<File | null>(null);
+  const [ocrOutput, setOcrOutput] = useState("");
+  const canRunOCR = !!hasKey && !!file;
 
   useEffect(() => {
-    setError("");
     fetch("/api/vinay/status")
       .then((r) => r.json())
       .then((d) => {
@@ -22,9 +28,9 @@ export default function Vinay() {
   }, []);
 
   async function ask() {
+    setError("");
+    setOutput("…thinking…");
     try {
-      setError("");
-      setOutput("…thinking…");
       const res = await fetch("/api/vinay/ask", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -45,6 +51,34 @@ export default function Vinay() {
       setError(e?.message || "Unknown error");
       setOutput("");
     }
+  }
+
+  async function runOCR() {
+    if (!file) {
+      setError("Please choose an image first.");
+      return;
+    }
+    setError("");
+    setOcrOutput("…reading image…");
+
+    const form = new FormData();
+    form.append("file", file);
+    form.append(
+      "prompt",
+      "First, OCR the content exactly. Then outline the key concepts required to solve it. Don't give the final answer; provide guiding hints."
+    );
+
+    const res = await fetch("/api/vinay/ocr", {
+      method: "POST",
+      body: form, // do NOT set Content-Type manually
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      setError(data?.error || "OCR failed");
+      setOcrOutput("");
+      return;
+    }
+    setOcrOutput(data.text || "(no text)");
   }
 
   return (
@@ -74,12 +108,12 @@ export default function Vinay() {
           </span>
         </div>
 
-        {/* Optional: raw status JSON for debugging */}
+        {/* (Optional) show raw status JSON for debugging */}
         <pre className="bg-gray-50 p-2 border rounded text-xs">
           /api/vinay/status → {statusJson ? JSON.stringify(statusJson) : "(pending…)"}
         </pre>
 
-        {/* Input area */}
+        {/* Text prompt */}
         <textarea
           className="w-full border rounded p-2"
           placeholder="Ask Virtual Professor something…"
@@ -87,7 +121,6 @@ export default function Vinay() {
           value={input}
           onChange={(e) => setInput(e.target.value)}
         />
-
         <button
           onClick={ask}
           className="bg-blue-600 text-white px-4 py-2 rounded w-fit disabled:opacity-60"
@@ -96,14 +129,44 @@ export default function Vinay() {
           Send
         </button>
 
-        {error && (
-          <div className="text-red-600 text-sm">Error: {error}</div>
-        )}
+        {error && <div className="text-red-600 text-sm">Error: {error}</div>}
 
-        {/* Output */}
         <pre className="whitespace-pre-wrap bg-gray-50 p-3 rounded border min-h-24">
           {output}
         </pre>
+
+        {/* Image OCR section */}
+        <div className="pt-4 border-t">
+          <h2 className="text-xl font-semibold mb-2">Upload Image (OCR + Hints)</h2>
+
+          <input
+            type="file"
+            accept="image/png,image/jpeg,image/jpg"
+            onChange={(e) => {
+              const f = e.target.files?.[0] || null;
+              setFile(f);
+              console.log("Picked file:", f?.name, f?.type, f?.size);
+            }}
+            className="mb-2"
+          />
+
+          <div className="text-sm text-gray-600 mb-2">
+            Key: {hasKey ? "loaded ✅" : hasKey === null ? "checking…" : "missing ❌"} ·
+            File: {file ? file.name : "none selected"}
+          </div>
+
+          <button
+            onClick={runOCR}
+            className="bg-indigo-600 text-white px-4 py-2 rounded disabled:opacity-60"
+            disabled={!canRunOCR}
+          >
+            Run OCR
+          </button>
+
+          <pre className="whitespace-pre-wrap bg-gray-50 p-3 rounded border mt-3 min-h-24">
+            {ocrOutput}
+          </pre>
+        </div>
       </div>
     </div>
   );
