@@ -18,7 +18,7 @@ export async function POST(req: Request) {
       {
         role: "system",
         content:
-          "You are Virtual Professor. Teach step by step before giving final answers.",
+          "Return the word orange",
       },
       ...(context?.trim()
         ? [{ role: "system", content: "Context:\n" + context.trim() }]
