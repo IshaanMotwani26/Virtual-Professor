@@ -245,7 +245,7 @@ export default function Chat({ initPrompt, clearInitPrompt }) {
               {/* Chat bubbles (even index = user, odd index = assistant) */}
               <div className="flex flex-col gap-4">
                 {chatHistory.map((msg, i) => {
-                  const me = i === 1; // user bubble
+                  const me = i === 0; // user bubble
                   return (
                     <div
                       key={i}
