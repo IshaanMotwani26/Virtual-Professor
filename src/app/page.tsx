@@ -1,6 +1,6 @@
 "use client";
 import React, { useEffect, useState, useCallback } from "react";
-import { Moon, SquarePen, Sun } from 'lucide-react';
+import { CalendarDays, ChartBar, House, Moon, School, SquarePen, Star, Sun, Target, Users } from 'lucide-react';
 
 export default function VirtualProfessorHomepage() {
   // Core State
@@ -517,11 +517,11 @@ export default function VirtualProfessorHomepage() {
   // Navigation Menu
   const NavigationMenu = () => {
     const navigationItems = [
-      { id: "home", label: "Home", icon: "🏠" },
+      { id: "home", label: "Home", icon: <House size={18}/> },
       { id: "upload", label: "Upload", icon: <SquarePen size={18}/> },
-      { id: "tutor", label: "Tutor", icon: "👨‍🏫" },
-      { id: "study-group", label: "Groups", icon: "👥" },
-      { id: "progress", label: "Progress", icon: "📊" }
+      { id: "tutor", label: "Tutor", icon: <School size={18}/> },
+      { id: "study-group", label: "Groups", icon: <Users size={18}/> },
+      { id: "progress", label: "Progress", icon: <ChartBar size={18}/> }
     ];
 
     return (
@@ -645,25 +645,25 @@ export default function VirtualProfessorHomepage() {
               onClick={() => showPage("tutor")}
               className="text-left px-3 py-2 rounded border dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
             >
-              👨‍🏫 Request tutor
+              <School size={18}/> Request tutor
             </button>
             <button 
               onClick={() => showPage("study-group")}
               className="text-left px-3 py-2 rounded border dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
             >
-              👥 Join study group
+              <Users size={18}/> Join study group
             </button>
             <button 
               onClick={() => showPage("progress")}
               className="text-left px-3 py-2 rounded border dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
             >
-              📊 Track progress
+              <ChartBar size={18}/> Track progress
             </button>
             <button 
               onClick={() => showPage("gpa")}
               className="text-left px-3 py-2 rounded border dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
             >
-              🎯 GPA tracker
+              <Target size={18}/> GPA tracker
             </button>
           </div>
         </div>
@@ -1070,86 +1070,6 @@ export default function VirtualProfessorHomepage() {
     
   );
 
-  // Upload Assignment Page
-  const UploadPage = () => (
-    <section className="max-w-2xl mx-auto px-6 py-8">
-      <div className="text-center mb-8">
-        <h2 className="text-3xl font-bold">Upload Assignment</h2>
-        <p className="mt-3 text-gray-600 dark:text-gray-300">Submit your assignment for personalized feedback and guidance</p>
-      </div>
-
-      <div className="bg-white dark:bg-gray-800 p-6 rounded-lg border dark:border-gray-700">
-        <form onSubmit={handleUploadSubmit} className="space-y-6">
-          <div>
-            <label className="block text-sm font-medium mb-1">Assignment Title</label>
-            <input 
-              name="title"
-              type="text" 
-              className="w-full px-3 py-2 border rounded-md dark:bg-gray-700 dark:border-gray-600 focus:ring-2 focus:ring-indigo-500" 
-              placeholder="Enter assignment title" 
-            />
-            <ErrorDisplay field="uploadTitle" />
-          </div>
-          
-          <div>
-            <label className="block text-sm font-medium mb-1">Subject</label>
-            <select 
-              name="subject"
-              className="w-full px-3 py-2 border rounded-md dark:bg-gray-700 dark:border-gray-600 focus:ring-2 focus:ring-indigo-500"
-            >
-              <option value="">Select a subject</option>
-              <option>Mathematics</option>
-              <option>Science</option>
-              <option>English</option>
-              <option>History</option>
-              <option>Computer Science</option>
-              <option>Other</option>
-            </select>
-            <ErrorDisplay field="uploadSubject" />
-          </div>
-          
-          <div>
-            <label className="block text-sm font-medium mb-1">Due Date</label>
-            <input 
-              name="dueDate"
-              type="date" 
-              className="w-full px-3 py-2 border rounded-md dark:bg-gray-700 dark:border-gray-600 focus:ring-2 focus:ring-indigo-500" 
-            />
-            <ErrorDisplay field="uploadDueDate" />
-          </div>
-          
-          <div>
-            <label className="block text-sm font-medium mb-1">Assignment Files</label>
-            <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-8 text-center hover:border-indigo-400 transition-colors">
-              <div className="text-4xl mb-4">📁</div>
-              <h3 className="text-lg font-medium mb-2">Drop files here or click to browse</h3>
-              <p className="text-sm text-gray-500 dark:text-gray-400">Supported formats: PDF, DOC, DOCX, TXT</p>
-              <input type="file" multiple accept=".pdf,.doc,.docx,.txt" className="hidden" />
-            </div>
-          </div>
-          
-          <div>
-            <label className="block text-sm font-medium mb-1">Additional Instructions</label>
-            <textarea 
-              className="w-full px-3 py-2 border rounded-md dark:bg-gray-700 dark:border-gray-600 focus:ring-2 focus:ring-indigo-500" 
-              rows={4}
-              placeholder="Any specific requirements or questions about this assignment?"
-            />
-          </div>
-          
-          <button 
-            type="submit" 
-            disabled={loading.upload}
-            className="w-full px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-          >
-            {loading.upload && <LoadingSpinner />}
-            Submit Assignment
-          </button>
-          <ErrorDisplay field="upload" />
-        </form>
-      </div>
-    </section>
-  );
 
   // Tutor Request Page
   const TutorPage = () => (
@@ -1235,15 +1155,15 @@ export default function VirtualProfessorHomepage() {
 
         <div className="space-y-4">
           <div className="bg-white dark:bg-gray-800 p-6 rounded-lg border dark:border-gray-700">
-            <h3 className="font-semibold text-lg mb-2">🎯 Personalized Learning</h3>
+            <h3 className="font-semibold text-lg mb-2"><Target size={18}/> Personalized Learning</h3>
             <p className="text-sm text-gray-600 dark:text-gray-300">Tailored sessions based on your learning style and pace</p>
           </div>
           <div className="bg-white dark:bg-gray-800 p-6 rounded-lg border dark:border-gray-700">
-            <h3 className="font-semibold text-lg mb-2">⭐ Expert Tutors</h3>
+            <h3 className="font-semibold text-lg mb-2"><Star size={18}/> Expert Tutors</h3>
             <p className="text-sm text-gray-600 dark:text-gray-400">Certified professionals with proven track records</p>
           </div>
           <div className="bg-white dark:bg-gray-800 p-6 rounded-lg border dark:border-gray-700">
-            <h3 className="font-semibold text-lg mb-2">📅 Flexible Scheduling</h3>
+            <h3 className="font-semibold text-lg mb-2"><CalendarDays size={18}/> Flexible Scheduling</h3>
             <p className="text-sm text-gray-600 dark:text-gray-400">Book sessions that fit your busy schedule</p>
           </div>
         </div>
@@ -1352,7 +1272,6 @@ export default function VirtualProfessorHomepage() {
       
       <div className="py-8">
         {currentPage === "home" && <HomePage />}
-        {currentPage === "upload" && <UploadPage />}
         {currentPage === "tutor" && <TutorPage />}
         {currentPage === "study-group" && <StudyGroupPage />}
         {currentPage === "progress" && <ProgressPage />}
