@@ -625,14 +625,13 @@ export default function VirtualProfessorHomepage() {
 
 	// Homepage Content
 	const HomePage = () => (
-		<section className="max-w-6xl mx-auto px-6 grid gap-8 grid-cols-1 lg:grid-cols-3 items-start">
-			<div className="lg:col-span-2">
+		<section className="max-w-6xl mx-auto px-6 grid gap-8 items-start">
+			<div className="col-span-4">
 				<h2 className="text-4xl font-extrabold leading-tight">Your personal virtual professor for any subject</h2>
 				<p className="mt-3 text-lg text-gray-600 dark:text-gray-300">Ask questions, get micro-lessons, track your study schedule and get help with assignments — all in one place.</p>
 
-
 				<h3 className="mt-8 text-xl font-semibold">Featured micro-lessons</h3>
-				<div className="mt-4 grid gap-4 grid-cols-1 sm:grid-cols-2">
+				<div className="mt-4 grid gap-4  grid-cols-4">
 					{[
 						{ title: "Git Essentials", category: "Coding", minutes: 10 },
 						{ title: "JavaScript Closures", category: "Coding", minutes: 12 },
@@ -699,82 +698,25 @@ export default function VirtualProfessorHomepage() {
 						{ title: "Globalization", category: "History", minutes: 12 },
 						{ title: "Digital Age History", category: "History", minutes: 10 },
 					].sort((a, b) => a.title.localeCompare(b.title)).map((c) => (
-						<article key={c.title} className="p-4 border rounded-md hover:shadow-lg transition-shadow dark:border-gray-700 bg-white dark:bg-gray-800">
+						<article key={c.title} className="p-4 border rounded-md hover:outline-1 hover:scale-105 transition-duration-150 transition-shadow dark:border-gray-700 bg-white dark:bg-gray-800"
+							onClick={() => {
+								const prompt = `Please provide a lesson on "${c.title}" including main concepts, 3 key points, and a short practice question.`;
+								setInitPrompt(prompt);
+								showPage('chat');
+							}}
+						>
 							<h4 className="font-semibold">{c.title}</h4>
 							<p className="text-sm text-gray-500 dark:text-gray-300 mt-1">{c.minutes} min • micro-lesson</p>
-							{c.category === "Coding" && <FileTerminal />}
-							{c.category === "Math" && <ChartSpline />}
-							{c.category === "English" && <BookMarked />}
-							{c.category === "History" && <BookOpenText />}
-							<div className="mt-3 flex gap-2">
-								<button
-									onClick={() => {
-										const prompt = `Please provide a lesson on "${c.title}" including main concepts, 3 key points, and a short practice question.`;
-										setInitPrompt(prompt);
-										showPage('chat');
-									}}
-									className="px-3 py-1 rounded bg-emerald-500 text-white hover:bg-emerald-600 transition-colors"
-								>
-									Start
-								</button>
+							<div className="py-2">
+								{c.category === "Coding" && <FileTerminal />}
+								{c.category === "Math" && <ChartSpline />}
+								{c.category === "English" && <BookMarked />}
+								{c.category === "History" && <BookOpenText />}
 							</div>
 						</article>
 					))}
 				</div>
 			</div>
-
-			<aside>
-				<div className="p-4 border rounded-md bg-white dark:bg-gray-800 dark:border-gray-700">
-					<h4 className="font-semibold">Today</h4>
-					<ul className="mt-3 text-sm text-gray-600 dark:text-gray-300 space-y-2">
-						<li>09:00 — Review class notes</li>
-						<li>13:00 — Group project meeting</li>
-						<li>16:00 — Exam prep session</li>
-					</ul>
-					<div className="mt-4 flex gap-2">
-						<button className="flex-1 px-3 py-2 rounded bg-indigo-600 text-white hover:bg-indigo-700 transition-colors">Open schedule</button>
-						<button className="px-3 py-2 rounded border dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors" onClick={() => setChatOpen((v) => !v)}>
-							{chatOpen ? "Close chat" : "Chat"}
-						</button>
-					</div>
-				</div>
-
-				<div className="mt-4 p-4 border rounded-md bg-white dark:bg-gray-800 dark:border-gray-700">
-					<h4 className="font-semibold">Quick actions</h4>
-					<div className="mt-3 grid gap-2">
-						<button
-							onClick={() => window.location.href = "/chat"}
-							className="text-left px-3 py-2 rounded border dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-						>
-							<SquarePen size={18} /> Upload assignment
-						</button>
-						<button
-							onClick={() => showPage("tutor")}
-							className="text-left px-3 py-2 rounded border dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-						>
-							<School size={18} /> Request tutor
-						</button>
-						<button
-							onClick={() => showPage("study-group")}
-							className="text-left px-3 py-2 rounded border dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-						>
-							<Users size={18} /> Join study group
-						</button>
-						<button
-							onClick={() => showPage("progress")}
-							className="text-left px-3 py-2 rounded border dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-						>
-							<ChartBar size={18} /> Track progress
-						</button>
-						<button
-							onClick={() => showPage("gpa")}
-							className="text-left px-3 py-2 rounded border dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-						>
-							<Target size={18} /> GPA tracker
-						</button>
-					</div>
-				</div>
-			</aside>
 		</section>
 	);
 
