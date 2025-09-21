@@ -126,7 +126,7 @@ export default function VirtualProfessorHomepage() {
   }, [clearError, setError, showNotification]);
 
   // Authentication handlers with validation
-  const handleAuthSubmit = useCallback(async (e: React.FormEvent<HTMLFormElement>) => {
+const handleAuthSubmit = useCallback(async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     
     const formData = new FormData(e.currentTarget);
@@ -160,16 +160,55 @@ export default function VirtualProfessorHomepage() {
     if (hasErrors) return;
 
     await safeAsync(async () => {
-      // Simulate API call
-      await new Promise((resolve, reject) => {
-        setTimeout(() => {
-          if (Math.random() > 0.05) { // 95% success rate
-            resolve(true);
-          } else {
-            reject(new Error(isSignUp ? 'Failed to create account' : 'Failed to sign in'));
+      if (isSignUp) {
+        // Create username from email (you might want to modify this logic)
+        const username = email.split('@')[0];
+        
+        const userData = {
+          name: fullName,
+          username: username,
+          email: email,
+          password: password
+        };
+
+        const response = await fetch('/api/db/new-user', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(userData)
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          if (response.status === 409) {
+            throw new Error('Username already exists. Please try a different email.');
           }
-        }, 1000);
-      });
+          throw new Error(errorData.error || 'Failed to create account');
+        }
+
+        // Handle session cookie if your backend returns it
+        const responseData = await response.json();
+        if (responseData['Set-Cookie']) {
+          // The cookie should be automatically set by the browser
+          console.log('Session cookie received');
+        }
+      } else {
+        // For sign in, you'll need to create a separate endpoint
+        // This is just a placeholder for now
+        const response = await fetch('/api/db/signin', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ email, password })
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to sign in');
+        }
+      }
 
       setIsAuthenticated(true);
       setCurrentPage("home");
