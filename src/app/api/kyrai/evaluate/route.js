@@ -41,7 +41,7 @@ Rules:
             },
             { role: "user", content: input }
         ],
-        temperature: 0
+        temperature: 0.8
     });
     return response.choices[0].message.content;
 }
@@ -76,17 +76,19 @@ Concepts: A list of core concepts relevant to the topics (e.g., ["Derivatives", 
 }
 
 Output:  Use the input given to generate relavent questions. While you will be using concepts to create the questions, use topics and subject as a background.
+Concept_tag: The core concept the question is testing. This should correspond directly from the input.
 Questions: A list of multiple-choice questions. You should have 1-2 questions per concept.
 Choices: Each question should have 4 answer choices. Only one should be correct. The other three should be plausible distractors based on common misconceptions.
 Correct_answer: The correct answer for each question.
-Explanations: A brief explanation (1-2 sentences) of why the correct answer is right and why the distractors are wrong.
+Explanations: An array of explanations for each choice, explaining why it was right, or explaining the common misconception that makes it incorrect.
 {
     "questions": [
         {
+            "concept_tag": string,
             "question": string,
             "choices": [string],
             "correct_answer": integer,
-            "explanations": string
+            "explanations": [string]
         }
     ]
 }
@@ -99,23 +101,12 @@ Rules:
 - When outputting JSON for tools or final results, strictly follow the specified schemas.
 `
             },
-            { role: "user", content: input }
+            { role: "system", content: input }
         ],
-        temperature: 0
+        temperature: 0.8
     });
 
     return response.choices[0].message.content;
-}
-async function generateAssessment(input) {
-    const response = await client.chat.completions.create({
-        model: "gpt-4o-mini",
-        messages: [
-            {
-                role: "user",
-                content: input
-            }
-        ]
-    });
 }
 
 export async function POST(req) {
@@ -126,6 +117,7 @@ export async function POST(req) {
     }
 
     const analysis = await analyzeText(prompt);
+    const response = await generateAssessment(analysis);
 
     return NextResponse.json({ response });
 }
