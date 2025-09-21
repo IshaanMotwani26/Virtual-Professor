@@ -16,6 +16,9 @@ export default function VirtualProfessorHomepage() {
 	const [username, setUsername] = useState<string | null>(null);
 	const [uploadedFiles, setUploadedFiles] = useState<Array<{ name: string, type: string, keyPoints: string[] }>>([]);
 
+	// New: micro-lesson sort mode (alpha | category)
+	const [sortMode, setSortMode] = useState<"alpha" | "category">("alpha");
+
 	// Error Handling State
 	const [errors, setErrors] = useState<{ [key: string]: string }>({});
 	const [loading, setLoading] = useState<{ [key: string]: boolean }>({});
@@ -86,7 +89,48 @@ export default function VirtualProfessorHomepage() {
 		}
 	}, [query]);
 
-	// Theme handling with error handling
+	// --- Added: robust theme init + persistence (keeps your existing effect below) ---
+	type ThemeMode = "light" | "dark";
+	const THEME_KEY = "vp-theme";
+
+	const applyTheme = (mode: ThemeMode) => {
+		const root = document.documentElement;
+		if (mode === "dark") root.classList.add("dark");
+		else root.classList.remove("dark");
+
+		let meta = document.querySelector('meta[name="color-scheme"]') as HTMLMetaElement | null;
+		if (!meta) {
+			meta = document.createElement("meta");
+			meta.name = "color-scheme";
+			document.head.appendChild(meta);
+		}
+		meta.content = mode === "dark" ? "dark light" : "light dark";
+	};
+
+	// Initialize from localStorage or system preference
+	useEffect(() => {
+		try {
+			const saved = (localStorage.getItem(THEME_KEY) as ThemeMode | null);
+			const initial: ThemeMode =
+				saved ?? (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+			setTheme(initial);
+			applyTheme(initial);
+		} catch {
+			applyTheme(theme);
+		}
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, []);
+
+	// Persist and apply on change
+	useEffect(() => {
+		try { localStorage.setItem(THEME_KEY, theme); } catch {}
+		try { applyTheme(theme); } catch (error) {
+			console.error('Error applying theme:', error);
+			showNotification('error', 'Failed to apply theme changes');
+		}
+	}, [theme, showNotification]);
+
+	// Theme handling with error handling (kept from your original)
 	useEffect(() => {
 		try {
 			const root = document.documentElement;
@@ -626,9 +670,39 @@ export default function VirtualProfessorHomepage() {
 				<h2 className="text-4xl font-extrabold leading-tight">Your personal virtual professor for any subject</h2>
 				<p className="mt-3 text-lg text-gray-600 dark:text-gray-300">Ask questions, get micro-lessons, track your study schedule and get help with assignments — all in one place.</p>
 
-				<h3 className="mt-8 text-xl font-semibold">Featured micro-lessons</h3>
-				<div className="mt-4 grid gap-4  grid-cols-4">
-					{[
+				{/* --- Updated: sort toggle + dynamic rendering --- */}
+				<h3 className="mt-8 text-xl font-semibold flex items-center justify-between">
+					<span>Featured micro-lessons</span>
+					<div className="inline-flex items-center rounded-lg border dark:border-gray-700 overflow-hidden">
+						<button
+							type="button"
+							onClick={() => setSortMode("alpha")}
+							className={`px-3 py-1 text-sm font-medium transition ${
+								sortMode === "alpha"
+									? "bg-indigo-600 text-white"
+									: "bg-transparent hover:bg-gray-100 dark:hover:bg-gray-800"
+							}`}
+							aria-pressed={sortMode === "alpha"}
+						>
+							A → Z
+						</button>
+						<button
+							type="button"
+							onClick={() => setSortMode("category")}
+							className={`px-3 py-1 text-sm font-medium border-l dark:border-gray-700 transition ${
+								sortMode === "category"
+									? "bg-indigo-600 text-white"
+									: "bg-transparent hover:bg-gray-100 dark:hover:bg-gray-800"
+							}`}
+							aria-pressed={sortMode === "category"}
+						>
+							By category
+						</button>
+					</div>
+				</h3>
+
+				{(() => {
+					const lessons = [
 						{ title: "Git Essentials", category: "Coding", minutes: 10 },
 						{ title: "JavaScript Closures", category: "Coding", minutes: 12 },
 						{ title: "Asynchronous JS", category: "Coding", minutes: 15 },
@@ -693,12 +767,17 @@ export default function VirtualProfessorHomepage() {
 						{ title: "Fall of the Soviet Union", category: "History", minutes: 15 },
 						{ title: "Globalization", category: "History", minutes: 12 },
 						{ title: "Digital Age History", category: "History", minutes: 10 },
-					].sort((a, b) => a.title.localeCompare(b.title)).map((c) => (
-						<article key={c.title} className="p-4 border rounded-md hover:outline-1 hover:scale-105 transition-duration-150 transition-shadow dark:border-gray-700 bg-white dark:bg-gray-800"
+					];
+
+					const Card = (c: typeof lessons[number]) => (
+						<article
+							key={`${c.category}-${c.title}`}
+							className="p-4 border rounded-md hover:outline-1 hover:scale-105 transition-duration-150 transition-shadow dark:border-gray-700 bg-white dark:bg-gray-800"
 							onClick={() => {
 								const prompt = `Please provide a lesson on "${c.title}" including main concepts, 3 key points, and a short practice question.`;
 								setInitPrompt(prompt);
-								showPage('chat');
+								// Use "Chat" to match your NavigationMenu + main render
+								showPage('Chat');
 							}}
 						>
 							<h4 className="font-semibold">{c.title}</h4>
@@ -710,8 +789,41 @@ export default function VirtualProfessorHomepage() {
 								{c.category === "History" && <BookOpenText />}
 							</div>
 						</article>
-					))}
-				</div>
+					);
+
+					// A → Z
+					if (sortMode === "alpha") {
+						const alpha = [...lessons].sort((a, b) => a.title.localeCompare(b.title));
+						return (
+							<div className="mt-4 grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+								{alpha.map(Card)}
+							</div>
+						);
+					}
+
+					// By category
+					const byCat = lessons.reduce<Record<string, typeof lessons>>((acc, cur) => {
+						(acc[cur.category] ??= []).push(cur);
+						return acc;
+					}, {});
+					const orderedCats = Object.keys(byCat).sort();
+
+					return (
+						<div className="mt-4 space-y-8">
+							{orderedCats.map((cat) => {
+								const items = byCat[cat].sort((a, b) => a.title.localeCompare(b.title));
+								return (
+									<section key={cat}>
+										<h4 className="text-lg font-semibold mb-3">{cat}</h4>
+										<div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+											{items.map(Card)}
+										</div>
+									</section>
+								);
+							})}
+						</div>
+					);
+				})()}
 			</div>
 		</section>
 	);
@@ -1326,4 +1438,3 @@ export default function VirtualProfessorHomepage() {
 		</main>
 	);
 }
-

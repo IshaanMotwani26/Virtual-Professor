@@ -1,7 +1,10 @@
 @import "tailwindcss";
 
+/* Tailwind v4: enable `dark:` utilities to activate when an ancestor has `.dark` */
+@custom-variant dark (&:where(.dark *));
 
 :root {
+  /* light theme vars */
   --background: #ffffff;
   --foreground: #171717;
 
@@ -9,6 +12,12 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+}
+
+/* when you toggle `<html class="dark">`, these override */
+.dark {
+  --background: #0b0b0b;      /* pick what you like */
+  --foreground: #e5e7eb;
 }
 
 body {
