@@ -1,6 +1,6 @@
 "use client";
 import React, { useEffect, useState, useCallback } from "react";
-import { Puzzle, BookMarked, BookOpenText, CalendarDays, ChartBar, ChartSpline, FileTerminal, House, Moon, School, SquarePen, Star, Sun, Target, Users } from 'lucide-react';
+import { Puzzle, BookMarked, BookOpenText, CalendarDays, ChartBar, ChartSpline, FileTerminal, House, Moon, School, SquarePen, Star, Sun, Target, Users, BadgeQuestionMark } from 'lucide-react';
 import Chat from "./chat/page";
 import Panel from "./panel/page";
 
@@ -636,7 +636,7 @@ export default function VirtualProfessorHomepage() {
 			{ id: "home", label: "Home", icon: <House size={18} /> },
 			{ id: "Chat", label: "Chat", icon: <SquarePen size={18} /> },
 			{ id: "panel", label: "Browser Extension", icon: <Puzzle size={18} /> },
-			{ id: "study-group", label: "Groups", icon: <Users size={18} /> },
+			{ id: "study-group", label: "FAQ", icon: <BadgeQuestionMark size={18} /> },
 			{ id: "progress", label: "Progress", icon: <ChartBar size={18} /> }
 		];
 
@@ -1325,72 +1325,33 @@ export default function VirtualProfessorHomepage() {
 		</section>
 	);
 
-	// Study Group Page
-	const StudyGroupPage = () => (
+	const FAQPage = () => (
 		<section className="max-w-4xl mx-auto px-6 py-8">
 			<div className="text-center mb-8">
-				<h2 className="text-3xl font-bold">Join a Study Group</h2>
-				<p className="mt-3 text-gray-600 dark:text-gray-300">Collaborate with peers and enhance your learning through group study</p>
+				<h2 className="text-3xl font-bold">Frequently Asked Questions</h2>
 			</div>
-
-			<div className="mb-6">
-				<input
-					type="text"
-					className="w-full px-4 py-3 border rounded-md dark:bg-gray-800 dark:border-gray-700 focus:ring-2 focus:ring-indigo-500"
-					placeholder="Search study groups by subject or topic..."
-				/>
-			</div>
-
 			<div className="space-y-4">
 				{[
 					{
-						title: "Calculus Study Group",
-						subject: "Mathematics",
-						members: 12,
-						schedule: "Tuesdays 7PM",
-						description: "Focusing on derivatives and integrals. Preparing for midterm exams."
+						question: "How is this different from asking ChatGPT a question?",
+						answer: "Our goal is for ai models to teach the user and guide them to their answer instead of replacing their thinking process."
 					},
 					{
-						title: "Organic Chemistry Lab",
-						subject: "Chemistry",
-						members: 8,
-						schedule: "Thursdays 6PM",
-						description: "Lab report discussions and reaction mechanisms practice."
+						question: "",
+						answer: ""
 					},
 					{
-						title: "World History Essays",
-						subject: "History",
-						members: 15,
-						schedule: "Sundays 3PM",
-						description: "Peer review sessions and research paper collaboration."
+						question: "",
+						answer: ""
 					},
-					{
-						title: "Python Programming",
-						subject: "Computer Science",
-						members: 20,
-						schedule: "Saturdays 2PM",
-						description: "Algorithm practice and coding challenges."
-					}
-				].map((group, index) => (
+				].map((item, index) => (
 					<div key={index} className="bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-lg p-6 flex justify-between items-center">
 						<div className="flex-1">
-							<h3 className="font-semibold text-lg">{group.title}</h3>
-							<div className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-								{group.subject} • {group.members} members • Meets {group.schedule}
-							</div>
-							<p className="text-sm text-gray-600 dark:text-gray-300 mt-2">{group.description}</p>
+							<h3 className="font-semibold text-lg">{item.question}</h3>
+							<p className="text-sm text-gray-600 dark:text-gray-300 mt-2">{item.answer}</p>
 						</div>
-						<button className="ml-4 px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors">
-							Join Group
-						</button>
 					</div>
 				))}
-			</div>
-
-			<div className="text-center mt-8">
-				<button className="px-6 py-3 border dark:border-gray-700 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
-					Create New Study Group
-				</button>
 			</div>
 		</section>
 	);
@@ -1427,7 +1388,7 @@ export default function VirtualProfessorHomepage() {
 			<div className="py-4">
 				{currentPage === "home" && <HomePage />}
 				{currentPage === "panel" && <Panel />}
-				{currentPage === "study-group" && <StudyGroupPage />}
+				{currentPage === "study-group" && <FAQPage />}
 				{currentPage === "progress" && <ProgressPage />}
 				{currentPage === "gpa" && <GPAPage />}
 				{currentPage === "media" && <MediaAnalysisPage />}
