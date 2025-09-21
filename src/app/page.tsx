@@ -192,7 +192,7 @@ export default function VirtualProfessorHomepage() {
 		await safeAsync(async () => {
 			if (isSignUp) {
 				const userData = {
-					name: fullName,
+					username: fullName,
 					email: email,
 					password: password
 				};
@@ -589,7 +589,7 @@ export default function VirtualProfessorHomepage() {
 	const NavigationMenu = () => {
 		const navigationItems = [
 			{ id: "home", label: "Home", icon: <House size={18} /> },
-			{ id: "upload", label: "Upload", icon: <SquarePen size={18} /> },
+			{ id: "Chat", label: "Chat", icon: <SquarePen size={18} /> },
 			{ id: "tutor", label: "Tutor", icon: <School size={18} /> },
 			{ id: "study-group", label: "Groups", icon: <Users size={18} /> },
 			{ id: "progress", label: "Progress", icon: <ChartBar size={18} /> }
@@ -602,11 +602,7 @@ export default function VirtualProfessorHomepage() {
 						<button
 							key={nav.id}
 							onClick={() => {
-								if (nav.id === "upload") {
-									showPage("chat")
-								} else {
-									showPage(nav.id)
-								}
+								showPage(nav.id)
 							}
 							}
 							className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-all whitespace-nowrap text-sm font-medium ${currentPage === nav.id
@@ -1324,7 +1320,7 @@ export default function VirtualProfessorHomepage() {
 				{currentPage === "progress" && <ProgressPage />}
 				{currentPage === "gpa" && <GPAPage />}
 				{currentPage === "media" && <MediaAnalysisPage />}
-				{currentPage === "chat" && <Chat initPrompt={initPrompt} clearInitPrompt={setInitPrompt} />}
+				{currentPage === "Chat" && <Chat initPrompt={initPrompt} clearInitPrompt={setInitPrompt} />}
 			</div>
 			<Footer />
 		</main>

@@ -19,7 +19,10 @@ export async function POST(req: Request) {
 	const backendDB = client.db("Virtual-Prof");
 	const users = backendDB.collection("Users");
 	const userData: User = await req.json();
-	if (await users.findOne({ username: userData.username })) {
+	const grr = await users.findOne({ username: userData.username });
+	console.log(grr);
+
+	if (grr) {
 		console.log("Duplicate user signup detected");
 		return NextResponse.json({ error: "User already signed up" }, { status: 409 });
 	} else {
