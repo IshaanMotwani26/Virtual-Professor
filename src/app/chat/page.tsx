@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState, useRef, useCallback } from "react";
-import Header from "@/components/header";
 
 export default function Vinay() {
 	const [hasKey, setHasKey] = useState<boolean | null>(null);
@@ -19,12 +18,12 @@ export default function Vinay() {
 	}, []);
 
 
-
 	const handleSubmit = useCallback(async (e: { preventDefault: () => void; } | null) => {
 		if (e) e.preventDefault()
 		if (textboxValue.trim() === "") return
 		setChatHistory(prev => [...prev, textboxValue])
 		setAwaitingResponse(true)
+		setTextboxValue("")
 		const res = await fetch("/api/vinay/ask", {
 			method: "POST",
 			body: JSON.stringify({ prompt: textboxValue }),
@@ -37,7 +36,6 @@ export default function Vinay() {
 			textboxValue,
 			data.choices[0]?.message?.content || "Yeah your question so bad gpt didnt want to answer it😭",
 		])
-		setTextboxValue("")
 	}, [textboxValue]);
 
 	// If an initial prompt is provided via the `init` query param, set it and submit
@@ -71,8 +69,7 @@ export default function Vinay() {
 
 
 	return (
-		<div className="flex flex-col h-full w-full bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-gray-100">
-			<Header />
+		<div className="mx-auto flex flex-col h-[80vh] max-w-6xl text-gray-900 dark:text-gray-100">
 			<div className="flex p-6 flex-col h-full w-full">
 				<div className="flex flex-col items-center">
 					<h1 className="text-3xl font-bold tracking-tight">VirtualProfessor</h1>
