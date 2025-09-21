@@ -32,6 +32,7 @@ export default function Chat({ initPrompt, clearInitPrompt }) {
     }
   }, [awaitingResponse]);
   useEffect(() => {
+    document.documentElement.classList.add("dark");
     const introtexts = ["I'm ready when you are.", "What are we learning today?", "Ask me anything.", "Let's get started.", "Ready to study?"]
     setIntroText(introtexts[Math.floor(Math.random() * introtexts.length)])
   }, []); 
