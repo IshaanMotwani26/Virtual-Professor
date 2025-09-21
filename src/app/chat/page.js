@@ -1,18 +1,17 @@
 "use client"
 import { useEffect, useState, useRef } from "react";
-import Header from "@/components/header";
 
 import { File, Send } from 'lucide-react';
 
 
 
-export default function Chat() {
-  const [hasKey, setHasKey] = useState(null);
-  const [inputOptions, setInputOptions] = useState(false);
-  const [awaitingResponse, setAwaitingResponse] = useState(false);
-  const [chatHistory, setChatHistory] = useState([]);
-  const [textboxValue, setTextboxValue] = useState("")
-  const [files, setFiles] = useState([])
+export default function Chat({ initPrompt, clearInitPrompt }) {
+	const [hasKey, setHasKey] = useState(null);
+	const [inputOptions, setInputOptions] = useState(false);
+	const [awaitingResponse, setAwaitingResponse] = useState(false);
+	const [chatHistory, setChatHistory] = useState([]);
+	const [textboxValue, setTextboxValue] = useState("")
+	const [files, setFiles] = useState([])
 
   const [questions, setQuestions] = useState([])
   const [currentQuestion, setCurrentQuestion] = useState(0)
@@ -81,14 +80,31 @@ export default function Chat() {
       setQuestions(response.questions)
     }
 
+		// // If an initial prompt is provided via the `init` query param, set it and submit
+		// useEffect(() => {
+		// 	try {
+		// 		if (initPrompt && initPrompt.trim() !== "") {
+		// 			// set the textbox value and auto-submit after a tick so component mounts
+		// 			setTextboxValue(initPrompt);
+		// 			// small timeout to let state update and UI render
+		// 			setTimeout(() => {
+		// 				// create a fake event object compatible with handleSubmit
+		// 				handleSubmit({ preventDefault: () => { } });
+		// 			}, 70);
+		// 			clearInitPrompt("");
+		// 		}
+		// 	} catch (e) {
+		// 		console.error('Failed to auto-send init prompt:', e);
+		// 	}
+		// }, [handleSubmit]);
 
-  }
+	}
 
-  const bottomRef = useRef(null)
+	const bottomRef = useRef(null)
 
-  useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" })
-  }, [chatHistory])
+	useEffect(() => {
+		bottomRef.current?.scrollIntoView({ behavior: "smooth" })
+	}, [chatHistory])
 
 
   return (
