@@ -1,11 +1,8 @@
 // src/app/vinay/page.tsx
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import Header from "@/components/header";
-
-type Tab = "chat" | "image";
-type Hist = { id: string; q: string; a: string; at: number };
 
 export default function Vinay() {
   const [hasKey, setHasKey] = useState<boolean | null>(null);
@@ -22,8 +19,10 @@ export default function Vinay() {
       .catch(() => setHasKey(false));
   }, []);
 
-  async function handleSubmit(e: { preventDefault: () => void; }) {
-    e.preventDefault()
+  
+
+  const handleSubmit = useCallback(async (e: { preventDefault: () => void; } | null) => {
+    if (e) e.preventDefault()
     if (textboxValue.trim() === "") return
     setChatHistory(prev => [...prev, textboxValue])
     setAwaitingResponse(true)
@@ -40,7 +39,30 @@ export default function Vinay() {
       data.choices[0]?.message?.content || "Yeah your question so bad gpt didnt want to answer it😭",
     ])
     setTextboxValue("")
-  }
+  }, [textboxValue]);
+
+  // If an initial prompt is provided via the `init` query param, set it and submit
+  useEffect(() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const init = params.get('init');
+      if (init && init.trim() !== "") {
+        // set the textbox value and auto-submit after a tick so component mounts
+        setTextboxValue(init);
+        // small timeout to let state update and UI render
+        setTimeout(() => {
+          // create a fake event object compatible with handleSubmit
+          handleSubmit({ preventDefault: () => {} });
+          // remove the param from URL to avoid re-submitting on reload
+          params.delete('init');
+          const newUrl = window.location.pathname + (params.toString() ? '?' + params.toString() : '');
+          window.history.replaceState({}, '', newUrl);
+        }, 50);
+      }
+    } catch (e) {
+      console.error('Failed to auto-send init prompt:', e);
+    }
+  }, [handleSubmit]);
 
   const bottomRef = useRef<HTMLDivElement | null>(null)
 

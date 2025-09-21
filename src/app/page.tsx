@@ -643,8 +643,15 @@ const handleAuthSubmit = useCallback(async (e: React.FormEvent<HTMLFormElement>)
               <h4 className="font-semibold">{c.title}</h4>
               <p className="text-sm text-gray-500 dark:text-gray-300 mt-1">{c.minutes} min • micro-lesson</p>
               <div className="mt-3 flex gap-2">
-                <button className="px-3 py-1 rounded bg-emerald-500 text-white hover:bg-emerald-600 transition-colors">Start</button>
-                <button className="px-3 py-1 rounded border dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">Preview</button>
+                <button
+                  onClick={() => {
+                    const prompt = `Please provide a lesson on "${c.title}" including main concepts, 3 key points, and a short practice question.`;
+                    window.location.href = `/chat?init=${encodeURIComponent(prompt)}`;
+                  }}
+                  className="px-3 py-1 rounded bg-emerald-500 text-white hover:bg-emerald-600 transition-colors"
+                >
+                  Start
+                </button>
               </div>
             </article>
           ))}
