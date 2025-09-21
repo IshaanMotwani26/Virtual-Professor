@@ -41,6 +41,8 @@ export default function Chat({ initPrompt, clearInitPrompt }) {
   const [introtext, setIntroText] = useState("");
   const [lesson, setLesson] = useState([]);
   const [currentLessonIndex, setCurrentLessonIndex] = useState(0);
+  const [showExitTicketAnswer, setShowExitTicketAnswer] = useState(false);
+  const [exitTicketChoice, setExitTicketChoice] = useState(null);
 
   // NEW: mode toggle ("learn" quiz flow vs "free" guided hints)
   const [mode, setMode] = useState("learn"); // "learn" | "free"
@@ -243,7 +245,7 @@ export default function Chat({ initPrompt, clearInitPrompt }) {
               {/* Chat bubbles (even index = user, odd index = assistant) */}
               <div className="flex flex-col gap-4">
                 {chatHistory.map((msg, i) => {
-                  const me = i % 2 === 0; // user bubble
+                  const me = i === 1; // user bubble
                   return (
                     <div
                       key={i}
@@ -286,7 +288,7 @@ export default function Chat({ initPrompt, clearInitPrompt }) {
                             setAwaitingResponse(false);
                             setChatHistory((prev) => [
                               ...prev,
-                              ["...", "Based on your responses, I've created a lesson plan to help you understand the concepts better."],
+                              ["Based on your responses, I've created a lesson plan to help you understand the concepts better."],
                             ]);
 
                           } else {
@@ -306,19 +308,46 @@ export default function Chat({ initPrompt, clearInitPrompt }) {
                   <div className="flex flex-col">
                     <div className="text-2xl font-semibold">{lesson[currentLessonIndex].concept}</div>
                     <div className="text-sm">{lesson[currentLessonIndex].explanation}</div>
-                    <div className="text-xs text-gray-400">
+                    <div className="text-xl text-gray-50">
                       Resources: {lesson[currentLessonIndex].resources.map((r, i) => (
                         <a
                           key={i}
                           href={r}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="block hover:underline cursor-pointer"
+                          className="block hover:underline cursor-pointer text-gray-300 text-lg"
                         >
                           {r}
                         </a>
                       ))}
                     </div>
+                    <div className="mt-2 text-2xl font-semibold">Knowledge Check</div>
+
+                    <div className="flex ">
+                      {lesson[currentLessonIndex].exit_ticket.map((q, qi) => (
+                        <div key={qi} className="col-span-2">
+                          <div className="mb-1">{q.question}</div>
+                          {showExitTicketAnswer && exitTicketChoice && (
+                            <p className={`text-xl py-4 ${exitTicketChoice.is_correct ? "text-green-500" : "text-red-500"}`}>{exitTicketChoice.is_correct ? "Correct! " : "Incorrect. "} {exitTicketChoice.explanation}</p>
+                          )}
+                          <div className="grid grid-flow-col grid-rows-2 gap-2">
+                            {q.choices.map((option, index) => (
+                              <div
+                                key={index}
+                                onClick={() => {
+                                  setExitTicketChoice(option);
+                                  setShowExitTicketAnswer(true);
+                                }}
+                                className="m-2 p-2 bg-gray-800 rounded-lg flex items-center justify-center cursor-pointer hover:bg-gray-600 transition duration-300">
+                                {option.choice}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+
+                    </div>
+
                   </div>
                   <div className="flex flex-row gap-4 mt-4 justify-between">
                     <button
@@ -335,6 +364,7 @@ export default function Chat({ initPrompt, clearInitPrompt }) {
                         setCurrentLessonIndex((idx) => Math.min(lesson.length - 1, idx + 1))
                       }
                     >
+
                       Forward →
                     </button>
                   </div>

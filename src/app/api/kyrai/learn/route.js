@@ -42,7 +42,7 @@ lessons: A list of lessons for each weak concept.
 concept: The specific topic or idea being addressed.
 explanation: A clear and concise explanation of the concept. Include example questions and answers to illustrate key points. Think of it as a mini lesson that a teacher might teach.
 resources: A list of 1-2 reputable and level-appropriate resources (links to articles, videos, or interactive tools) for further study.
-exit_ticket: A short quiz with 1-2 multiple-choice questions to assess understanding of the concept.
+exit_ticket: A short quiz with 1-2 multiple-choice questions to assess understanding of the concept. Each question should have 4 answer choices. 
 question: The question text.
 choices: A list of answer choices. There should only be one correct answer. Each incorrect answer should be a plausible distractor based on common misconceptions.
 choice: The text of the answer choice. 

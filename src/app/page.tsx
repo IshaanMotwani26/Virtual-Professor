@@ -1517,11 +1517,7 @@ export default function VirtualProfessorHomepage() {
 	const Footer = () => (
 		<footer className="max-w-6xl mx-auto p-6 text-sm text-gray-500 dark:text-gray-400 border-t dark:border-gray-700 mt-16">
 			<div className="flex justify-between">
-				<div>© 2025 VirtualProfessor</div>
-				<div className="flex gap-4">
-					<a href="#privacy" className="underline hover:text-gray-700 dark:hover:text-gray-300">Privacy</a>
-					<a href="#terms" className="underline hover:text-gray-700 dark:hover:text-gray-300">Terms</a>
-				</div>
+				
 			</div>
 		</footer>
 	);
