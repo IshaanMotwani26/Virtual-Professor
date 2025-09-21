@@ -39,6 +39,8 @@ export default function Chat({ initPrompt, clearInitPrompt }) {
   const [weakspots, setWeakspots] = useState([]);
   const [loadingText, setLoadingText] = useState("Thinking...");
   const [introtext, setIntroText] = useState("");
+  const [lesson, setLesson] = useState([]);
+  const [currentLessonIndex, setCurrentLessonIndex] = useState(0);
 
   // NEW: mode toggle ("learn" quiz flow vs "free" guided hints)
   const [mode, setMode] = useState("learn"); // "learn" | "free"
@@ -275,10 +277,17 @@ export default function Chat({ initPrompt, clearInitPrompt }) {
                           }
                           if (currentQuestion + 1 === questions.length) {
                             setAssessing(false);
-                            setLearning(true);
                             setAwaitingResponse(true);
-                            await fetchLearn({ weakspots: newWeakspots })
+                            const result = await fetchLearn({ weakspots: newWeakspots });
+                            const lessons = result.lessons;
+                            console.log(lessons)
+                            setLearning(true);
+                            setLesson(lessons);
                             setAwaitingResponse(false);
+                            setChatHistory((prev) => [
+                              ...prev,
+                              ["...", "Based on your responses, I've created a lesson plan to help you understand the concepts better."],
+                            ]);
 
                           } else {
                             setCurrentQuestion(currentQuestion + 1);
@@ -289,6 +298,45 @@ export default function Chat({ initPrompt, clearInitPrompt }) {
                         {option.choice}
                       </div>
                     ))}
+                  </div>
+                </div>
+              )}
+              {lesson.length > 0 && learning && (
+                <div className="bg-gray-700 text-gray-50 p-4 rounded-xl flex flex-col gap-3">
+                  <div className="flex flex-col">
+                    <div className="text-2xl font-semibold">{lesson[currentLessonIndex].concept}</div>
+                    <div className="text-sm">{lesson[currentLessonIndex].explanation}</div>
+                    <div className="text-xs text-gray-400">
+                      Resources: {lesson[currentLessonIndex].resources.map((r, i) => (
+                        <a
+                          key={i}
+                          href={r}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="block hover:underline cursor-pointer"
+                        >
+                          {r}
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="flex flex-row gap-4 mt-4 justify-between">
+                    <button
+                      className={`px-4 py-2 rounded-lg bg-gray-600 text-white font-medium disabled:opacity-50`}
+                      disabled={currentLessonIndex === 0}
+                      onClick={() => setCurrentLessonIndex((idx) => Math.max(0, idx - 1))}
+                    >
+                      ← Back
+                    </button>
+                    <button
+                      className={`px-4 py-2 rounded-lg bg-indigo-600 text-white font-medium disabled:opacity-50`}
+                      disabled={currentLessonIndex === lesson.length - 1}
+                      onClick={() =>
+                        setCurrentLessonIndex((idx) => Math.min(lesson.length - 1, idx + 1))
+                      }
+                    >
+                      Forward →
+                    </button>
                   </div>
                 </div>
               )}
