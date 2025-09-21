@@ -1,5 +1,6 @@
 "use client";
 import React, { useEffect, useState, useCallback } from "react";
+import { Moon, SquarePen, Sun } from 'lucide-react';
 
 export default function VirtualProfessorHomepage() {
   // Core State
@@ -11,10 +12,6 @@ export default function VirtualProfessorHomepage() {
   const [isSignUp, setIsSignUp] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [uploadedFiles, setUploadedFiles] = useState<Array<{name: string, type: string, keyPoints: string[]}>>([]);
-  const [messages, setMessages] = useState<{ from: "user" | "bot"; text: string }[]>([
-    { from: "bot", text: "Hi! I'm Prof. V. Ask me anything about your courses or assignments." },
-  ]);
-  const [chatQuery, setChatQuery] = useState("");
 
   // Error Handling State
   const [errors, setErrors] = useState<{[key: string]: string}>({});
@@ -116,43 +113,6 @@ export default function VirtualProfessorHomepage() {
     return true;
   };
 
-  // Chat message handling with error handling
-  const sendMessage = useCallback(async (text: string) => {
-    if (!text.trim()) {
-      setError('chat', 'Please enter a message');
-      return;
-    }
-
-    try {
-      clearError('chat');
-      setMessages((m) => [...m, { from: "user", text }]);
-      setChatQuery("");
-      setLoadingState('chat', true);
-
-      // Simulate API call with potential failure
-      await new Promise((resolve, reject) => {
-        setTimeout(() => {
-          if (Math.random() > 0.1) { // 90% success rate
-            resolve(true);
-          } else {
-            reject(new Error('Failed to get response from AI assistant'));
-          }
-        }, 750);
-      });
-
-      setMessages((m) => [...m, { 
-        from: "bot", 
-        text: "Great question — here's a quick explanation. You can also review a related micro-lesson for deeper learning." 
-      }]);
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to send message';
-      setError('chat', errorMessage);
-      showNotification('error', errorMessage);
-    } finally {
-      setLoadingState('chat', false);
-    }
-  }, [clearError, setError, showNotification, setLoadingState]);
-
   // Navigation with error handling
   const showPage = useCallback((pageId: string) => {
     try {
@@ -221,7 +181,6 @@ export default function VirtualProfessorHomepage() {
     try {
       setIsAuthenticated(false);
       setCurrentPage("home");
-      setMessages([{ from: "bot", text: "Hi! I'm Prof. V. Ask me anything about your courses or assignments." }]);
       setChatOpen(false);
       showNotification('info', 'Signed out successfully');
     } catch (error) {
@@ -380,7 +339,7 @@ export default function VirtualProfessorHomepage() {
           aria-label="Toggle theme"
           className="px-3 py-2 rounded-md border dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
         >
-          {theme === "dark" ? "☀️" : "🌙"}
+          {theme === "dark" ? <Sun/> : <Moon/> }
         </button>
       </header>
 
@@ -537,7 +496,7 @@ export default function VirtualProfessorHomepage() {
           aria-label="Toggle theme"
           className="px-3 py-2 rounded-md border dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
         >
-          {theme === "dark" ? "☀️" : "🌙"}
+          {theme === "dark" ? <Sun/> : <Moon/>}
         </button>
         <button 
           onClick={() => showPage("home")} 
@@ -559,12 +518,10 @@ export default function VirtualProfessorHomepage() {
   const NavigationMenu = () => {
     const navigationItems = [
       { id: "home", label: "Home", icon: "🏠" },
-      { id: "upload", label: "Upload", icon: "📝" },
+      { id: "upload", label: "Upload", icon: <SquarePen size={18}/> },
       { id: "tutor", label: "Tutor", icon: "👨‍🏫" },
       { id: "study-group", label: "Groups", icon: "👥" },
-      { id: "progress", label: "Progress", icon: "📊" },
-      { id: "gpa", label: "GPA", icon: "🎯" },
-      { id: "media", label: "Media", icon: "🎥" }
+      { id: "progress", label: "Progress", icon: "📊" }
     ];
 
     return (
@@ -573,7 +530,14 @@ export default function VirtualProfessorHomepage() {
           {navigationItems.map((nav) => (
             <button
               key={nav.id}
-              onClick={() => showPage(nav.id)}
+              onClick={() => {
+                if (nav.id=== "upload") {
+                  window.location.href = "/chat";
+                } else {
+                showPage(nav.id)
+                }
+              }
+            }
               className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-all whitespace-nowrap text-sm font-medium ${
                 currentPage === nav.id 
                   ? "bg-indigo-600 text-white shadow-md" 
@@ -672,10 +636,10 @@ export default function VirtualProfessorHomepage() {
           <h4 className="font-semibold">Quick actions</h4>
           <div className="mt-3 grid gap-2">
             <button 
-              onClick={() => showPage("upload")}
+              onClick={() => window.location.href="/chat"}
               className="text-left px-3 py-2 rounded border dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
             >
-              📝 Upload assignment
+              <SquarePen size={18}/> Upload assignment
             </button>
             <button 
               onClick={() => showPage("tutor")}
@@ -1040,7 +1004,7 @@ export default function VirtualProfessorHomepage() {
             </div>
             
             <div className="flex items-start gap-3">
-              <div className="text-2xl">📝</div>
+              <div className="text-2xl"><SquarePen size={18}/></div>
               <div>
                 <h4 className="font-semibold">Structured Notes</h4>
                 <p className="text-sm text-gray-600 dark:text-gray-400">Organized, searchable notes ready for study sessions</p>
@@ -1357,60 +1321,6 @@ export default function VirtualProfessorHomepage() {
     </section>
   );
 
-  // Chat Widget (separate from main search)
-  const ChatWidget = () => (
-    <div className={`fixed right-6 bottom-6 w-96 shadow-xl rounded-md overflow-hidden transform transition-all z-50 ${
-      chatOpen ? "translate-y-0" : "translate-y-8 opacity-80"
-    }`}>
-      <div className="bg-indigo-600 px-4 py-2 text-white flex items-center justify-between">
-        <strong>Prof Chat</strong>
-        <div className="flex gap-2">
-          <button onClick={() => setChatOpen(false)} aria-label="Close chat">✕</button>
-        </div>
-      </div>
-      <div className="bg-white dark:bg-gray-800 p-3 max-h-80 overflow-auto">
-        {messages.map((m, i) => (
-          <div key={i} className={`mb-2 ${m.from === "user" ? "text-right" : "text-left"}`}>
-            <div className={`inline-block px-3 py-2 rounded-md ${
-              m.from === "user" ? "bg-indigo-50 dark:bg-indigo-900" : "bg-gray-100 dark:bg-gray-700"
-            }`}>
-              {m.text}
-            </div>
-          </div>
-        ))}
-        {loading.chat && (
-          <div className="text-left mb-2">
-            <div className="inline-block px-3 py-2 rounded-md bg-gray-100 dark:bg-gray-700 flex items-center gap-2">
-              <LoadingSpinner size="sm" />
-              <span>Prof. V is thinking...</span>
-            </div>
-          </div>
-        )}
-      </div>
-      <div className="bg-gray-50 dark:bg-gray-900 p-2">
-        <div className="flex gap-2">
-          <input
-            value={chatQuery}
-            onChange={(e) => setChatQuery(e.target.value)}
-            onKeyDown={(e) => { if (e.key === 'Enter') sendMessage(chatQuery); }}
-            placeholder="Ask Prof. V a question..."
-            className="flex-1 rounded px-3 py-2 border dark:border-gray-700 bg-white dark:bg-gray-800 focus:ring-2 focus:ring-indigo-500"
-            aria-label="Type a chat message"
-            disabled={loading.chat}
-          />
-          <button 
-            onClick={() => sendMessage(chatQuery)} 
-            disabled={loading.chat}
-            className="px-3 py-2 rounded bg-indigo-600 text-white hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            Send
-          </button>
-        </div>
-        <ErrorDisplay field="chat" />
-      </div>
-    </div>
-  );
-
   // Footer
   const Footer = () => (
     <footer className="max-w-6xl mx-auto p-6 text-sm text-gray-500 dark:text-gray-400 border-t dark:border-gray-700 mt-16">
@@ -1449,9 +1359,8 @@ export default function VirtualProfessorHomepage() {
         {currentPage === "gpa" && <GPAPage />}
         {currentPage === "media" && <MediaAnalysisPage />}
       </div>
-      
-      <ChatWidget />
       <Footer />
     </main>
   );
 }
+
