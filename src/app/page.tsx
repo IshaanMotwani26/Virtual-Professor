@@ -1,6 +1,27 @@
 "use client";
 import React, { useEffect, useState, useCallback } from "react";
-import { Puzzle, BookMarked, BookOpenText, CalendarDays, ChartBar, ChartSpline, FileTerminal, House, Moon, School, SquarePen, Star, Sun, Target, Users, BadgeQuestionMark } from 'lucide-react';
+import {
+  Puzzle,
+  BookMarked,
+  BookOpenText,
+  CalendarDays,
+  ChartBar,
+  ChartSpline,
+  FileTerminal,
+  House,
+  Moon,
+  School,
+  SquarePen,
+  Star,
+  Sun,
+  Target,
+  Users,
+  BadgeQuestionMark,
+  HelpCircle,
+  ChevronDown,
+  ChevronUp,
+  Search,
+} from "lucide-react";
 import Chat from "./chat/page";
 import Panel from "./panel/page";
 
@@ -1325,36 +1346,172 @@ export default function VirtualProfessorHomepage() {
 		</section>
 	);
 
-	const FAQPage = () => (
-		<section className="max-w-4xl mx-auto px-6 py-8">
-			<div className="text-center mb-8">
-				<h2 className="text-3xl font-bold">Frequently Asked Questions</h2>
-			</div>
-			<div className="space-y-4">
-				{[
-					{
-						question: "How is this different from asking ChatGPT a question?",
-						answer: "Our goal is for ai models to teach the user and guide them to their answer instead of replacing their thinking process."
-					},
-					{
-						question: "",
-						answer: ""
-					},
-					{
-						question: "",
-						answer: ""
-					},
-				].map((item, index) => (
-					<div key={index} className="bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-lg p-6 flex justify-between items-center">
-						<div className="flex-1">
-							<h3 className="font-semibold text-lg">{item.question}</h3>
-							<p className="text-sm text-gray-600 dark:text-gray-300 mt-2">{item.answer}</p>
-						</div>
-					</div>
-				))}
-			</div>
-		</section>
-	);
+	const FAQPage = () => {
+  const faqs = [
+    {
+      question: "How is this different from asking ChatGPT a question?",
+      answer:
+        "VirtualProfessor is designed to teach, not replace your thinking. We guide you with concepts, step-by-step hints, and ‘check yourself’ prompts—and we avoid directly giving final numeric or closed-form answers.",
+    },
+    {
+      question: "What are the two modes (Learn vs Free)?",
+      answer:
+        "Learn mode runs a quick diagnostic, finds weak spots, and drills them with short questions and micro-lessons. Free mode lets you paste any problem or upload files; you’ll get a concept outline, progressive hints, and a quick self-check—without the final answer.",
+    },
+    {
+      question: "Will you give me the final answer?",
+      answer:
+        "No. We guide you to your own solution. You can ask for another hint, a similar worked example, or feedback on your attempt—but we avoid revealing the final result outright.",
+    },
+    {
+      question: "Which subjects do you support?",
+      answer:
+        "Most core subjects: math, physics, chemistry, biology, computer science, history, and writing/English. You can also use it for study skills, research planning, and general reasoning.",
+    },
+    {
+      question: "Can I upload screenshots, images, or PDFs?",
+      answer:
+        "Yes. Upload clear images (e.g., PNG/JPEG) or PDFs. We extract the text to provide targeted guidance. If the file is large or multi-page, it may take a bit longer to parse.",
+    },
+    {
+      question: "How does the browser extension help?",
+      answer:
+        "The extension lets you select text on any webpage and ask for guidance in place. It reads only the selected/visible text and returns hints—not answers—so you stay in learning mode.",
+    },
+    {
+      question: "What happens to my data and uploads?",
+      answer:
+        "We keep only what’s needed to provide the service. Review our Privacy and Terms (links in the footer) for details. Avoid including sensitive personal information in uploads.",
+    },
+    {
+      question: "Does it work offline?",
+      answer:
+        "No. An internet connection is required to analyze problems and generate guidance.",
+    },
+    {
+      question: "How do I switch between light and dark themes?",
+      answer:
+        "Use the sun/moon toggle in the header. Your preference is saved so it sticks the next time you visit.",
+    },
+    {
+      question: "What if the hints aren’t enough?",
+      answer:
+        "Ask for one more hint, upload your work so we can comment on your steps, or request a similar practice problem with scaffolding.",
+    },
+    {
+      question: "How do I report a bug or request a feature?",
+      answer:
+        "Use the Contact link in the footer. Include a short description and (if possible) a screenshot or the steps to reproduce.",
+    },
+  ];
+
+  const [query, setQuery] = useState("");
+  const [openIndex, setOpenIndex] = useState<number | null>(0);
+
+  const filtered = faqs.filter(
+    (f) =>
+      f.question.toLowerCase().includes(query.toLowerCase()) ||
+      f.answer.toLowerCase().includes(query.toLowerCase())
+  );
+
+  return (
+    <section className="max-w-4xl mx-auto px-6 py-8">
+      <div className="text-center mb-8">
+        <h2 className="text-3xl font-bold">Frequently Asked Questions</h2>
+        <p className="mt-2 text-gray-600 dark:text-gray-300">
+          Quick answers about how VirtualProfessor works.
+        </p>
+      </div>
+
+      {/* Search */}
+      <div className="mb-6">
+        <div className="relative">
+          <Search
+            size={18}
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+          />
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search FAQs…"
+            className="w-full pl-10 pr-3 py-2 rounded-md border dark:border-gray-700 bg-white dark:bg-gray-800 focus:ring-2 focus:ring-indigo-500"
+          />
+        </div>
+      </div>
+
+      {/* Accordion */}
+      <div className="space-y-3">
+        {filtered.length === 0 ? (
+          <div className="text-sm text-gray-600 dark:text-gray-300">
+            No results. Try a different keyword.
+          </div>
+        ) : (
+          filtered.map((item, idx) => {
+            // derive the actual index in the original list for stable open/close
+            const realIndex = faqs.findIndex((f) => f.question === item.question);
+            const isOpen = openIndex === realIndex;
+
+            return (
+              <div
+                key={item.question}
+                className="rounded-lg border dark:border-gray-700 bg-white dark:bg-gray-800"
+              >
+                <button
+                  type="button"
+                  aria-expanded={isOpen}
+                  onClick={() =>
+                    setOpenIndex(isOpen ? null : realIndex)
+                  }
+                  className="w-full flex items-center justify-between text-left px-4 py-3"
+                >
+                  <div className="flex items-center gap-2">
+                    <HelpCircle className="text-indigo-500" size={18} />
+                    <span className="font-semibold">{item.question}</span>
+                  </div>
+                  {isOpen ? (
+                    <ChevronUp className="text-gray-400" size={18} />
+                  ) : (
+                    <ChevronDown className="text-gray-400" size={18} />
+                  )}
+                </button>
+
+                <div
+                  className={`grid transition-[grid-template-rows] duration-200 ease-out ${
+                    isOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
+                  }`}
+                >
+                  <div className="overflow-hidden">
+                    <div className="px-4 pb-4 pt-1 text-sm text-gray-700 dark:text-gray-300">
+                      {item.answer}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          })
+        )}
+      </div>
+
+      {/* CTA */}
+      <div className="mt-8 flex items-center justify-between">
+        <p className="text-xs text-gray-500 dark:text-gray-400">
+          Last updated: {new Date().toLocaleDateString()}
+        </p>
+        <button
+          onClick={() => {
+            // jump users right into Chat with a helpful starter
+            setInitPrompt("I’m stuck on a problem and need guided hints.");
+            setCurrentPage("Chat");
+          }}
+          className="px-4 py-2 rounded-md bg-indigo-600 text-white hover:bg-indigo-700"
+        >
+          Ask in Chat
+        </button>
+      </div>
+    </section>
+  );
+};
+
 
 	// Footer
 	const Footer = () => (
