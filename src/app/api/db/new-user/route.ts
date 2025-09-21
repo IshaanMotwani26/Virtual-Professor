@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { MongoClient } from "mongodb";
 import bcrypt from "bcrypt";
-import { createSession } from "../login/route";
+import { createSession } from "../signin/route";
 
 const uri = process.env.DB_URI!;
 const SALT_ROUNDS = 10;
