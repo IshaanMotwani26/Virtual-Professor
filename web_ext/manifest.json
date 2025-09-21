@@ -1,0 +1,38 @@
+{
+  "manifest_version": 3,
+  "name": "Virtual Professor — Everywhere Panel",
+  "version": "0.2.1",
+  "description": "Sidecar that captures on-screen context, uploads media, and records video with OCR/transcription.",
+  "action": { "default_title": "Virtual Professor" },
+  "side_panel": { "default_path": "sidepanel.html" },
+  "background": { "service_worker": "background.js" },
+  "permissions": [
+  "storage",
+  "activeTab",
+  "scripting",
+  "tabs",
+  "sidePanel",
+  "tabCapture",
+  "desktopCapture",
+  "downloads"
+],
+  "host_permissions": [
+    "<all_urls>",
+    "http://localhost:3000/*",
+    "http://127.0.0.1:3000/*",
+    "https://localhost:3000/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "css": ["content.css"],
+      "run_at": "document_idle"
+    }
+  ],
+  "icons": {
+    "16": "icon16.png",
+    "48": "icon48.png",
+    "128": "icon128.png"
+  }
+}

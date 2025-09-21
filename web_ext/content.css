@@ -1,0 +1,33 @@
+/* Ask VP – appears when text is selected */
+.vp-floating-btn {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: 2147483647;
+  background: #2563eb;
+  color: #fff;
+  border-radius: 9999px;
+  padding: 10px 14px;
+  font: 500 13px system-ui, -apple-system, Segoe UI, Roboto;
+  box-shadow: 0 10px 20px rgba(0,0,0,.15);
+  cursor: pointer;
+  user-select: none;
+}
+.vp-floating-btn:hover { background: #1e40af; }
+
+/* Open VP – always visible */
+.vp-open-btn {
+  position: fixed;
+  right: 16px;
+  bottom: 56px; /* sits just above Ask VP */
+  z-index: 2147483647;
+  background: #111827;
+  color: #fff;
+  border-radius: 9999px;
+  padding: 8px 12px;
+  font: 500 12px system-ui, -apple-system, Segoe UI, Roboto;
+  box-shadow: 0 10px 20px rgba(0,0,0,.15);
+  cursor: pointer;
+  user-select: none;
+}
+.vp-open-btn:hover { background: #0b1220; }

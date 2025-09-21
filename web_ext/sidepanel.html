@@ -1,0 +1,124 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Virtual Professor</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+      :root {
+        --bg: #0b1020;
+        --fg: #e5e7eb;
+        --muted: #9ca3af;
+        --card: #111527;
+        --border: #1f2937;
+        --btn: #2563eb;
+        --btn2: #111827;
+      }
+      html, body { height: 100%; }
+      body {
+        margin: 0; background: var(--bg); color: var(--fg);
+        font: 14px/1.45 system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, "Helvetica Neue", Arial;
+      }
+
+      .app { --sb-width: 240px; display: grid; grid-template-columns: var(--sb-width) 1fr; height: 100%; }
+      .app.collapsed { --sb-width: 56px; }
+
+      .sidebar { border-right: 1px solid var(--border); background: #0c1226; display: flex; flex-direction: column; min-width: 56px; }
+      .sb-top { padding: 12px; display: flex; gap: 8px; align-items: center; }
+      .sb-title { font-weight: 700; font-size: 16px; }
+      .sb-actions { margin-left: auto; display: flex; gap: 6px; }
+      .sb-list { overflow: auto; padding: 8px; display: grid; gap: 6px; }
+      .sb-item { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 8px; cursor: pointer; display: flex; align-items: center; gap: 8px; }
+      .sb-item.active { outline: 2px solid #334155; }
+      .sb-item-title { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      .sb-item small { color: var(--muted); }
+      .app.collapsed .sb-title, .app.collapsed .sb-item-title, .app.collapsed .sb-item small { display: none; }
+      .app.collapsed .sb-actions { margin-left: 0; margin-right: 0; }
+
+      .btn { background: var(--btn); color: white; border: 0; padding: 6px 10px; border-radius: 8px; cursor: pointer; }
+      .btn.secondary { background: var(--btn2); }
+      .btn.icon { padding: 6px 8px; }
+
+      .main { display: grid; grid-template-rows: auto auto auto 1fr auto; gap: 10px; padding: 12px; }
+      .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+      .right-actions { display: inline-flex; gap: 8px; align-items: center; }
+      .muted { color: var(--muted); }
+
+      .card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 10px; }
+      textarea, input { width: 100%; box-sizing: border-box; background: #0e142b; color: var(--fg); border: 1px solid var(--border); border-radius: 8px; padding: 8px; }
+
+      .messages { overflow: auto; display: grid; gap: 10px; }
+      .msg { padding: 10px; border-radius: 10px; white-space: pre-wrap; }
+      .msg.user { background: #0e1b3d; border: 1px solid #1f2a44; }
+      .msg.assistant { background: #0e182f; border: 1px solid #1b2642; }
+
+      .composer { display: grid; gap: 8px; }
+      .composer .row { justify-content: space-between; }
+
+      .ctx-row { display:flex; gap:8px; align-items:center; }
+      .ctx-row label { display: inline-flex; gap: 6px; align-items: center; cursor: pointer; }
+      .chip { padding: 2px 8px; border-radius: 999px; background:#0e142b; border:1px solid var(--border); color: var(--muted); font-size:12px; }
+    </style>
+  </head>
+  <body>
+    <div class="app">
+      <aside class="sidebar">
+        <div class="sb-top">
+          <div class="sb-title">Chats</div>
+          <div class="sb-actions">
+            <button id="newChat" class="btn icon" title="New chat">＋</button>
+          </div>
+        </div>
+        <div id="chatList" class="sb-list"></div>
+      </aside>
+
+      <main class="main">
+        <div class="row">
+          <div class="muted" id="chatHeader">Select or create a chat</div>
+          <div class="right-actions">
+            <button id="renameChat" class="btn secondary">Rename</button>
+            <button id="deleteChat" class="btn secondary">Delete</button>
+            <button id="toggleSidebar" class="btn secondary">Bar</button>
+          </div>
+        </div>
+
+        <!-- TOOLBAR -->
+        <div class="row">
+          <button id="btn-preferred-capture" class="btn secondary">Preferred Capture</button>
+          <button id="btn-upload" class="btn">Upload…</button>
+          <input id="file-input" type="file" hidden multiple
+                 accept="image/*,audio/*,video/*,.pdf,.txt,.md,.markdown" />
+          <button id="btn-record-start" class="btn">Start recording</button>
+          <button id="btn-record-stop" class="btn secondary" disabled>Stop</button>
+          <span id="status" class="muted"></span>
+          <span id="recordStatus" class="muted"></span>
+        </div>
+
+        <div class="card">
+          <div class="ctx-row">
+            <span class="chip">Context</span>
+            <label title="Context is automatically attached to your message">
+              <input id="attachContext" type="checkbox" checked />
+              <span class="muted">Attach with message</span>
+            </label>
+          </div>
+          <textarea id="context" rows="5" placeholder="Paste or add captured text here—kept per chat."></textarea>
+        </div>
+
+        <div id="messages" class="messages card"></div>
+
+        <div class="composer card">
+          <textarea id="prompt" rows="3" placeholder="Ask a question… (Enter to send, Shift+Enter for newline)"></textarea>
+          <div class="row">
+            <span id="composerStatus" class="muted"></span>
+            <div>
+              <button id="ask" class="btn">Ask</button>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <script src="sidepanel.js"></script>
+  </body>
+</html>
