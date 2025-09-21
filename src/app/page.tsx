@@ -11,6 +11,7 @@ export default function VirtualProfessorHomepage() {
 	const [currentPage, setCurrentPage] = useState("home");
 	const [isSignUp, setIsSignUp] = useState(true);
 	const [isAuthenticated, setIsAuthenticated] = useState(false);
+	const [username, setUsername] = useState<string | null>(null);
 	const [uploadedFiles, setUploadedFiles] = useState<Array<{ name: string, type: string, keyPoints: string[] }>>([]);
 
 	// Error Handling State
@@ -98,6 +99,33 @@ export default function VirtualProfessorHomepage() {
 		}
 	}, [theme, showNotification]);
 
+	// On mount: check for a session cookie and validate it with the backend
+	useEffect(() => {
+		try {
+			const cookies = document.cookie.split(';').map(c => c.trim());
+			const sessionCookie = cookies.find(c => c.startsWith('session='));
+			if (!sessionCookie) return;
+			const sessionValue = sessionCookie.split('=')[1];
+			if (!sessionValue) return;
+			// validate with server
+			fetch(`/api/db/validate-session?session=${encodeURIComponent(sessionValue)}`)
+				.then(res => res.json().then(body => ({ ok: res.ok, body })))
+				.then(({ ok, body }) => {
+					if (ok && body.username) {
+						setIsAuthenticated(true);
+						setUsername(body.username);
+						showNotification('success', `Welcome back, ${body.username}`);
+					} else {
+						// invalid session: clear cookie
+						document.cookie = 'session=; path=/; max-age=0';
+					}
+				})
+				.catch(err => console.error('Session validation failed', err));
+		} catch (err) {
+			console.error('Error checking session cookie', err);
+		}
+	}, [showNotification]);
+
 	// Validation utilities
 	const validateEmail = (email: string): boolean => {
 		const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -183,12 +211,14 @@ export default function VirtualProfessorHomepage() {
 					throw new Error(errorData.error || 'Failed to create account');
 				}
 
-				// Handle session cookie if your backend returns it
-				const responseData = await response.json();
-				if (responseData['Set-Cookie']) {
-					// The cookie should be automatically set by the browser
-					console.log('Session cookie received');
-				}
+					// Handle session cookie returned in response body (workaround for Set-Cookie not persisting)
+					const responseData = await response.json();
+					if (responseData.session_cookie) {
+						// Set cookie client-side. Note: not HttpOnly.
+						const cookieValue = responseData.session_cookie;
+						// You can customize path/max-age as needed
+						document.cookie = `session=${cookieValue}; path=/; max-age=${7*24*3600}`;
+					}
 			} else {
 				// For sign in, you'll need to create a separate endpoint
 				// This is just a placeholder for now
@@ -200,10 +230,16 @@ export default function VirtualProfessorHomepage() {
 					body: JSON.stringify({ email, password })
 				});
 
-				if (!response.ok) {
-					const errorData = await response.json();
-					throw new Error(errorData.error || 'Failed to sign in');
-				}
+					if (!response.ok) {
+						const errorData = await response.json();
+						throw new Error(errorData.error || 'Failed to sign in');
+					} else {
+						const responseData = await response.json();
+						if (responseData.session_cookie) {
+							const cookieValue = responseData.session_cookie;
+							document.cookie = `session=${cookieValue}; path=/; max-age=${7*24*3600}`;
+						}
+					}
 			}
 
 			setIsAuthenticated(true);

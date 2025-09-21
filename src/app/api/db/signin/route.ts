@@ -24,7 +24,8 @@ export async function POST(req: Request) {
 	}
 	const matches = await bcrypt.compare(data.password, user.hash)
 	if (matches) {
-		return NextResponse.json({ "Set-Cookie": `session=${createSession(data.username)}` }, { status: 200 });
+		const session = await createSession(data.username);
+		return NextResponse.json({ session_cookie: session }, { status: 200 });
 	} else {
 		return NextResponse.json({ error: "Password or username is invalid" }, { status: 400 });
 	}
