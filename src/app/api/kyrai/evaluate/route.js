@@ -41,7 +41,7 @@ Rules:
             },
             { role: "user", content: input }
         ],
-        temperature: 0.8
+        temperature: 1
     });
     return response.choices[0].message.content;
 }
@@ -78,17 +78,22 @@ Concepts: A list of core concepts relevant to the topics (e.g., ["Derivatives", 
 Output:  Use the input given to generate relavent questions. While you will be using concepts to create the questions, use topics and subject as a background.
 Concept_tag: The core concept the question is testing. This should correspond directly from the input.
 Questions: A list of multiple-choice questions. You should have 1-2 questions per concept.
-Choices: Each question should have 4 answer choices. Only one should be correct. The other three should be plausible distractors based on common misconceptions.
-Correct_answer: The correct answer for each question.
-Explanations: An array of explanations for each choice, explaining why it was right, or explaining the common misconception that makes it incorrect.
+Choices: An object array of Choice Objects. Only one should be correct. The other three should be plausible distractors based on common misconceptions.
+Choice: A possible answer to the question.
+Is_correct: A boolean indicating if this choice is the correct answer.
+Explanation: A brief explanation of why this choice is correct or incorrect.
 {
     "questions": [
         {
             "concept_tag": string,
             "question": string,
-            "choices": [string],
-            "correct_answer": integer,
-            "explanations": [string]
+            "choices": [
+                {
+                    "choice": string,
+                    "is_correct": boolean,
+                    "explanation": string
+                }
+            ],
         }
     ]
 }
@@ -103,7 +108,7 @@ Rules:
             },
             { role: "system", content: input }
         ],
-        temperature: 0.8
+        temperature: 1
     });
 
     return response.choices[0].message.content;

@@ -2,8 +2,7 @@
 import { useEffect, useState, useRef } from "react";
 import Header from "@/components/header";
 
-import { Paperclip, File, Send } from 'lucide-react';
-import { isNull } from "util";
+import { File, Send } from 'lucide-react';
 
 
 
@@ -17,9 +16,21 @@ export default function Chat() {
 
   const [questions, setQuestions] = useState([])
   const [currentQuestion, setCurrentQuestion] = useState(0)
-  const [answering, setAnswering] = useState(true)
-  const [answer, setAnswer] = useState(null)
+  const [waiting, setWaiting] = useState(true)
+  const [assessing, setAssessing] = useState(false)
+  const [learning, setLearning] = useState(false)
+  const [weakspots, setWeakspots] = useState([])
+  const [loadingText, setLoadingText] = useState("Thinking...")
 
+  useEffect(() => {
+    const loadingtexts = ["Thinking...", "Hang on...", "One sec...", "Working on it...", "Just a moment...", "Let me see...", "Double checking...", "Analyzing..."]
+    if (awaitingResponse) {
+      const loadingInterval = setInterval(() => {
+        setLoadingText(loadingtexts[Math.floor(Math.random() * loadingtexts.length)])
+      }, 5000);
+      return () => clearInterval(loadingInterval);
+    }
+  }, [awaitingResponse]);
   // fetch key status once
   useEffect(() => {
     fetch("/api/vinay/status")
@@ -34,6 +45,7 @@ export default function Chat() {
     setChatHistory(prev => [...prev, textboxValue])
     setTextboxValue("")
     setAwaitingResponse(true)
+    setWaiting(false)
     let data;
     if (files.length > 0) {
       const formData = new FormData()
@@ -59,9 +71,13 @@ export default function Chat() {
       var { response } = await res.json();
       response = JSON.parse(response)
       console.log(response.questions)
-
       setAwaitingResponse(false)
-
+      for (const question in response.questions) {
+        var choices = response.questions[question].choices;
+        choices = choices.sort(() => Math.random() - 0.5);
+        response.questions[question].choices = choices;
+      }
+      setAssessing(true)
       setQuestions(response.questions)
     }
 
@@ -103,36 +119,44 @@ export default function Chat() {
         <div className="flex flex-grow mt-6 w-full justify-center">
           <div className="flex flex-col h-full w-4/5 items-end gap-4">
             <div className="flex flex-col h-16 overflow-y-auto scrollbar-hide gap-4 w-full flex-grow">
-              {(questions.length > 0) && answering &&
+              {(questions.length > 0) && assessing &&
                 <div className="bg-gray-700 text-gray-50 p-4 h-full w-full rounded-xl flex justify-center items-center flex-col ">
                   <div className="text-2xl">{questions[currentQuestion].question}</div>
                   <div className="grid grid-flow-col grid-rows-2 h-full w-full">
                     {questions[currentQuestion].choices.map((option, index) => (
-                      <div key={index} onClick={() => { setAnswer(index); setAnswering(false) }} className="m-2 p-2 bg-gray-800 rounded-lg hover:bg-gray-600 cursor-pointer flex items-center justify-center">
-                        {option}
+                      <div key={index} onClick={() => {
+                        let newWeakspots = weakspots;
+                        if (!option.is_correct) {
+                          newWeakspots = [...weakspots, questions[currentQuestion].concept_tag];
+                          setWeakspots(newWeakspots);
+                        }
+
+                        if (currentQuestion + 1 === questions.length) {
+                          setAssessing(false);
+                          console.log(newWeakspots); // now it includes the last question
+                          setLearning(true);
+                        } else {
+                          setCurrentQuestion(currentQuestion + 1);
+                        }
+                      }} className="m-2 p-2 bg-gray-800 rounded-lg hover:bg-gray-600 cursor-pointer flex items-center justify-center">
+                        {option.choice}
                       </div>
                     ))}
                   </div>
                 </div>
               }
-              {(questions.length > 0) && !answering &&
-                <div className="bg-gray-700 text-gray-50 p-4 h-full w-full rounded-xl flex justify-center items-center flex-col ">
-                  <div className="text-2xl">{questions[currentQuestion].question}</div>
-                  <div className="text-xl mt-4">You answered: <span className="font-bold">{questions[currentQuestion].choices[answer]}</span></div>
-                  <div className={`text-xl ${questions[currentQuestion].correct_answer == answer ? "text-emerald-400" : "text-rose-400"} mt-2`}>{questions[currentQuestion].correct_answer == answer ? "Correct!" : "Incorrect!"}</div>
-                  <div className="text-xl">{questions[currentQuestion].explanations[answer-1]}</div>
-                  {
-                    questions[currentQuestion].correct_answer == answer && (
-                      <div onClick={() => { setAnswering(true); setAnswer(null); setCurrentQuestion(currentQuestion + 1) }} className="cursor-pointer p-4 bg-blue-400 hover:bg-blue-600 transition duration-300 rounded-md">Next Question</div>
-                    )
-                  }
-                  {
-                    questions[currentQuestion].correct_answer !== answer && (
-                      <div onClick={() => { setAnswering(true); setAnswer(null) }} className="cursor-pointer p-4 bg-blue-400 hover:bg-blue-600 transition duration-300 rounded-md">Try Again</div>
-                    )
-                  }
+
+              {(awaitingResponse) &&
+                <div className=" text-gray-50 h-full w-full rounded-xl flex justify-center items-center">
+                  <div className="animate-pulse text-4xl">{loadingText}</div>
                 </div>
               }
+              {(waiting) &&
+                <div className=" text-gray-50 h-full w-full rounded-xl flex justify-center items-center">
+                  <div className="text-4xl">I'm ready when you are.</div>
+                </div>
+              }
+
               <div ref={bottomRef} />
             </div>
             <div className="w-full flex justify-center">
