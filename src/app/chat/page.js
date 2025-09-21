@@ -1,5 +1,5 @@
 "use client"
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, use } from "react";
 
 import { File, Send } from 'lucide-react';
 
@@ -20,6 +20,7 @@ export default function Chat({ initPrompt, clearInitPrompt }) {
   const [learning, setLearning] = useState(false)
   const [weakspots, setWeakspots] = useState([])
   const [loadingText, setLoadingText] = useState("Thinking...")
+  const [introtext, setIntroText] = useState("")
 
   useEffect(() => {
     const loadingtexts = ["Thinking...", "Hang on...", "One sec...", "Working on it...", "Just a moment...", "Let me see...", "Double checking...", "Analyzing..."]
@@ -30,6 +31,10 @@ export default function Chat({ initPrompt, clearInitPrompt }) {
       return () => clearInterval(loadingInterval);
     }
   }, [awaitingResponse]);
+  useEffect(() => {
+    const introtexts = ["I'm ready when you are.", "What are we learning today?", "Ask me anything.", "Let's get started.", "Ready to study?"]
+    setIntroText(introtexts[Math.floor(Math.random() * introtexts.length)])
+  }, []); 
   // fetch key status once
   useEffect(() => {
     fetch("/api/vinay/status")
@@ -109,7 +114,6 @@ export default function Chat({ initPrompt, clearInitPrompt }) {
 
   return (
     <div className="flex flex-col h-full w-full bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-gray-100">
-      <Header />
       <div className="flex p-6 flex-col h-full w-full">
         <div className="flex flex-col items-center">
           <h1 className="text-3xl font-bold tracking-tight">VirtualProfessor</h1>
@@ -169,7 +173,7 @@ export default function Chat({ initPrompt, clearInitPrompt }) {
               }
               {(waiting) &&
                 <div className=" text-gray-50 h-full w-full rounded-xl flex justify-center items-center">
-                  <div className="text-4xl">I'm ready when you are.</div>
+                  <div className="text-4xl">{introtext}</div>
                 </div>
               }
 
