@@ -3,9 +3,9 @@ import OpenAI from "openai";
 const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 
-async function analyzeText(input) {
+async function evaluate_responses(input) {
     const response = await client.chat.completions.create({
-        model: "gpt-4o-mini",
+        model: "gpt-4o-search-preview",
         messages: [
             {
                 role: "system",
@@ -21,14 +21,47 @@ You are part of an adaptive tutor, which follows this pipeline:
 4) recommend_resources: Retrieve 3–8 resources for weak concepts. Prefer concise, reputable, and level-appropriate materials. Avoid unsafe or age-inappropriate content.
 5) teach_concept: Deliver a short, structured lesson focused on the user's original input and weak areas. Include analogy, worked example(s), interactive check(s), and an exit ticket (2 MCQs).
 
-You are tasked with step 1: analyze_input. Follow this JSON schema only. Do not add extra text.
-Subject: A broad academic subject (e.g., "Mathematics", "Biology", "Physics").
-Topics: A list of specific topics within the subject (e.g., ["Calculus", "Linear Algebra", "Statistics"]).
-Concepts: A list of core concepts relevant to the topics (e.g., ["Derivatives", "Integrals", "Matrix Multiplication"]).
+You are tasked with step 4: recommend_resources. Follow this JSON schema only. Do not add extra text.
+
+Input: 
+weakspots: A list of topics, ideas or concepts that the user needs further study on.
 {
-  "subject": string,
-  "topics": [string],
-  "concepts": [string],
+    "weakspots": [string], 
+}
+
+
+Output: For each weak concept, provide a comprehensive explanation on the subject, followed by 1-2 external resources (links to articles, videos, or interactive tools) that are reputable and appropriate for the user's level. Finally, generate 1-2 multiple-choice questions to assess understanding of the concept.
+Follow this JSON schema only. Do not add extra text.
+lessons: A list of lessons for each weak concept.
+concept: The specific topic or idea being addressed.
+explanation: A clear and concise explanation of the concept.
+resources: A list of 1-2 reputable and level-appropriate resources (links to articles, videos, or interactive tools) for further study.
+exit_ticket: A short quiz with 1-2 multiple-choice questions to assess understanding of the concept.
+question: The question text.
+choices: A list of answer choices. There should only be one correct answer. Each incorrect answer should be a plausible distractor based on common misconceptions.
+choice: The text of the answer choice. 
+is_correct: A boolean indicating if this choice is the correct answer.
+explanation: A brief explanation of why this choice is correct or incorrect.
+{
+    "lessons": [
+        {
+            "concept": string,
+            "explanation": string,
+            "resources": [string],
+            "exit_ticket": [
+                {
+                    "question": string,
+                    "choices": [
+                        {
+                            "choice": string,
+                            "is_correct": boolean,
+                            "explanation": string
+                        }
+                    ],
+                }
+            ]
+        }
+    ]
 }
 
 Rules:
@@ -39,9 +72,26 @@ Rules:
 - When outputting JSON for tools or final results, strictly follow the specified schemas.
 `
             },
+            { role: "system", content: JSON.stringify(input) }
+        ],
+
+    });
+    return response.choices[0].message.content;
+}
+
+async function format_json(input) {
+    const response = await client.chat.completions.create({
+        model: "gpt-4o-mini",
+        messages: [
+            {
+                role: "system",
+                content: `
+You are a JSON formatter. Given an input that may contain extraneous text, extract and return only the valid JSON portion. Ensure the output is properly formatted JSON without any additional commentary or text.
+`
+            },
             { role: "user", content: input }
         ],
-        temperature: 1
+        temperature: 0
     });
     return response.choices[0].message.content;
 }
@@ -55,8 +105,8 @@ export async function POST(req) {
         return NextResponse.json({ error: "Missing OPENAI_API_KEY" }, { status: 500 });
     }
 
-    const analysis = await analyzeText(prompt);
-    const response = await generateAssessment(analysis);
+    const response = await evaluate_responses(prompt);
+    const formatted = await format_json(response);
 
-    return NextResponse.json({ response });
+    return NextResponse.json({ response: formatted });
 }
