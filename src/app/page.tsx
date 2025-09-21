@@ -161,12 +161,8 @@ const handleAuthSubmit = useCallback(async (e: React.FormEvent<HTMLFormElement>)
 
     await safeAsync(async () => {
       if (isSignUp) {
-        // Create username from email (you might want to modify this logic)
-        const username = email.split('@')[0];
-        
         const userData = {
           name: fullName,
-          username: username,
           email: email,
           password: password
         };
@@ -441,12 +437,12 @@ const handleAuthSubmit = useCallback(async (e: React.FormEvent<HTMLFormElement>)
             <form onSubmit={handleAuthSubmit} className="space-y-4">
               {isSignUp && (
                 <div>
-                  <label className="block text-sm font-medium mb-1">Full Name</label>
+                  <label className="block text-sm font-medium mb-1">Name</label>
                   <input 
                     name="fullName"
                     type="text" 
                     className="w-full px-3 py-2 border rounded-md dark:bg-gray-700 dark:border-gray-600 focus:ring-2 focus:ring-indigo-500" 
-                    placeholder="Enter your full name" 
+                    placeholder="Enter your name" 
                   />
                   <ErrorDisplay field="fullName" />
                 </div>
