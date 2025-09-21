@@ -355,7 +355,7 @@ export default function Chat({ initPrompt, clearInitPrompt }) {
                       disabled={currentLessonIndex === 0}
                       onClick={() => {
                         setCurrentLessonIndex((idx) => Math.max(0, idx - 1));
-                        showExitTicketAnswer(false);
+                        setShowExitTicketAnswer(false);
                         setExitTicketChoice(null);
                       }}
                     >
