@@ -1,6 +1,6 @@
 "use client";
 import React, { useEffect, useState, useCallback } from "react";
-import { CalendarDays, ChartBar, House, Moon, School, SquarePen, Star, Sun, Target, Users } from 'lucide-react';
+import { BookMarked, BookOpenText, CalendarDays, ChartBar, ChartSpline, FileTerminal, House, Moon, School, SquarePen, Star, Sun, Target, Users } from 'lucide-react';
 import Chat from "./chat/page";
 
 export default function VirtualProfessorHomepage() {
@@ -10,6 +10,7 @@ export default function VirtualProfessorHomepage() {
 	const [theme, setTheme] = useState<"light" | "dark">("dark");
 	const [chatOpen, setChatOpen] = useState(false);
 	const [currentPage, setCurrentPage] = useState("home");
+	const [initPrompt, setInitPrompt] = useState<string | undefined>(undefined);
 	const [isSignUp, setIsSignUp] = useState(true);
 	const [isAuthenticated, setIsAuthenticated] = useState(false);
 	const [username, setUsername] = useState<string | null>(null);
@@ -629,58 +630,88 @@ export default function VirtualProfessorHomepage() {
 				<h2 className="text-4xl font-extrabold leading-tight">Your personal virtual professor for any subject</h2>
 				<p className="mt-3 text-lg text-gray-600 dark:text-gray-300">Ask questions, get micro-lessons, track your study schedule and get help with assignments — all in one place.</p>
 
-				<div className="mt-6">
-					<label htmlFor="search" className="sr-only">Search</label>
-					<div className="relative">
-						<input
-							id="search"
-							value={query}
-							onChange={(e) => setQuery(e.target.value)}
-							onKeyDown={(e) => {
-								if (e.key === 'Enter') {
-									console.log("Main search query:", query);
-								}
-							}}
-							placeholder="Search subjects, topics or ask a question..."
-							className="w-full rounded-md border px-4 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-400 dark:bg-gray-800 dark:border-gray-700"
-							aria-label="Search subjects or ask a question"
-						/>
-						<button
-							onClick={() => console.log("Main search query:", query)}
-							className="absolute right-2 top-2 px-3 py-1 rounded bg-indigo-600 text-white hover:bg-indigo-700 transition-colors"
-							aria-label="Search"
-						>
-							Search
-						</button>
-					</div>
-
-					{suggestions.length > 0 && (
-						<ul className="mt-2 bg-white dark:bg-gray-800 border rounded-md p-2 shadow-sm">
-							{suggestions.map((s) => (
-								<li key={s} className="py-1 px-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md cursor-pointer" onClick={() => setQuery(s)}>
-									{s}
-								</li>
-							))}
-						</ul>
-					)}
-				</div>
 
 				<h3 className="mt-8 text-xl font-semibold">Featured micro-lessons</h3>
 				<div className="mt-4 grid gap-4 grid-cols-1 sm:grid-cols-2">
 					{[
-						{ title: "Intro to Algebra", minutes: 6 },
-						{ title: "Essay Writing Basics", minutes: 8 },
-						{ title: "Critical Thinking", minutes: 12 },
-						{ title: "World History Overview", minutes: 10 },
-					].map((c) => (
+						{ title: "Git Essentials", category: "Coding", minutes: 10 },
+						{ title: "JavaScript Closures", category: "Coding", minutes: 12 },
+						{ title: "Asynchronous JS", category: "Coding", minutes: 15 },
+						{ title: "REST APIs", category: "Coding", minutes: 12 },
+						{ title: "Big O Notation", category: "Coding", minutes: 10 },
+						{ title: "Arrays vs Lists", category: "Coding", minutes: 8 },
+						{ title: "Recursion Basics", category: "Coding", minutes: 10 },
+						{ title: "Hash Tables", category: "Coding", minutes: 12 },
+						{ title: "Object-Oriented Programming", category: "Coding", minutes: 14 },
+						{ title: "Functional Programming Basics", category: "Coding", minutes: 12 },
+						{ title: "SQL Queries Basics", category: "Coding", minutes: 10 },
+						{ title: "NoSQL vs SQL", category: "Coding", minutes: 8 },
+						{ title: "Version Control Branching", category: "Coding", minutes: 10 },
+						{ title: "Testing & Debugging", category: "Coding", minutes: 12 },
+						{ title: "API Authentication", category: "Coding", minutes: 15 },
+						{ title: "Web Security Basics", category: "Coding", minutes: 14 },
+						{ title: "Limits Intuition", category: "Math", minutes: 8 },
+						{ title: "Derivative Rules", category: "Math", minutes: 10 },
+						{ title: "Chain Rule", category: "Math", minutes: 12 },
+						{ title: "Integrals Basics", category: "Math", minutes: 14 },
+						{ title: "Probability Rules", category: "Math", minutes: 10 },
+						{ title: "Distributions", category: "Math", minutes: 12 },
+						{ title: "Hypothesis Testing", category: "Math", minutes: 14 },
+						{ title: "Regression Basics", category: "Math", minutes: 15 },
+						{ title: "Vectors Basics", category: "Math", minutes: 8 },
+						{ title: "Matrices and Determinants", category: "Math", minutes: 12 },
+						{ title: "Trigonometric Identities", category: "Math", minutes: 10 },
+						{ title: "Sequences and Series", category: "Math", minutes: 12 },
+						{ title: "Differential Equations Intro", category: "Math", minutes: 15 },
+						{ title: "Optimization Problems", category: "Math", minutes: 12 },
+						{ title: "Linear Algebra Concepts", category: "Math", minutes: 14 },
+						{ title: "Graph Theory Basics", category: "Math", minutes: 10 },
+						{ title: "Thesis Statements", category: "English", minutes: 8 },
+						{ title: "Paragraph Structure", category: "English", minutes: 10 },
+						{ title: "Citations & MLA", category: "English", minutes: 12 },
+						{ title: "Concise Editing", category: "English", minutes: 8 },
+						{ title: "Academic Tone", category: "English", minutes: 10 },
+						{ title: "Active vs Passive Voice", category: "English", minutes: 8 },
+						{ title: "Common Grammar Errors", category: "English", minutes: 10 },
+						{ title: "Vocabulary Expansion", category: "English", minutes: 12 },
+						{ title: "Reading Comprehension Skills", category: "English", minutes: 15 },
+						{ title: "Summarizing Texts", category: "English", minutes: 10 },
+						{ title: "Persuasive Writing", category: "English", minutes: 12 },
+						{ title: "Narrative Techniques", category: "English", minutes: 10 },
+						{ title: "Analyzing Poetry", category: "English", minutes: 14 },
+						{ title: "Literary Devices", category: "English", minutes: 12 },
+						{ title: "Research Paper Basics", category: "English", minutes: 15 },
+						{ title: "Public Speaking Tips", category: "English", minutes: 12 },
+						{ title: "Causes of WWI", category: "History", minutes: 10 },
+						{ title: "Industrial Revolution", category: "History", minutes: 12 },
+						{ title: "Civil Rights Movement", category: "History", minutes: 14 },
+						{ title: "Cold War Overview", category: "History", minutes: 15 },
+						{ title: "Ancient Greece", category: "History", minutes: 12 },
+						{ title: "Roman Empire", category: "History", minutes: 14 },
+						{ title: "Renaissance Europe", category: "History", minutes: 12 },
+						{ title: "Enlightenment Ideas", category: "History", minutes: 10 },
+						{ title: "American Revolution", category: "History", minutes: 12 },
+						{ title: "French Revolution", category: "History", minutes: 14 },
+						{ title: "World War II Causes", category: "History", minutes: 15 },
+						{ title: "Decolonization", category: "History", minutes: 12 },
+						{ title: "Modern Middle East", category: "History", minutes: 14 },
+						{ title: "Fall of the Soviet Union", category: "History", minutes: 15 },
+						{ title: "Globalization", category: "History", minutes: 12 },
+						{ title: "Digital Age History", category: "History", minutes: 10 },
+					].sort((a, b) => a.title.localeCompare(b.title)).map((c) => (
 						<article key={c.title} className="p-4 border rounded-md hover:shadow-lg transition-shadow dark:border-gray-700 bg-white dark:bg-gray-800">
 							<h4 className="font-semibold">{c.title}</h4>
 							<p className="text-sm text-gray-500 dark:text-gray-300 mt-1">{c.minutes} min • micro-lesson</p>
+							{c.category === "Coding" && <FileTerminal />}
+							{c.category === "Math" && <ChartSpline />}
+							{c.category === "English" && <BookMarked />}
+							{c.category === "History" && <BookOpenText />}
 							<div className="mt-3 flex gap-2">
 								<button
 									onClick={() => {
 										const prompt = `Please provide a lesson on "${c.title}" including main concepts, 3 key points, and a short practice question.`;
-										window.location.href = `/chat?init=${encodeURIComponent(prompt)}`;
+										setInitPrompt(prompt);
+										showPage('chat');
 									}}
 									className="px-3 py-1 rounded bg-emerald-500 text-white hover:bg-emerald-600 transition-colors"
 								>
@@ -1351,7 +1382,7 @@ export default function VirtualProfessorHomepage() {
 				{currentPage === "progress" && <ProgressPage />}
 				{currentPage === "gpa" && <GPAPage />}
 				{currentPage === "media" && <MediaAnalysisPage />}
-				{currentPage === "chat" && <Chat />}
+				{currentPage === "chat" && <Chat initPrompt={initPrompt} clearInitPrompt={setInitPrompt} />}
 			</div>
 			<Footer />
 		</main>
