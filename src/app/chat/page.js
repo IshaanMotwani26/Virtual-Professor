@@ -353,113 +353,119 @@ export default function Chat({ initPrompt, clearInitPrompt }) {
                     <button
                       className={`px-4 py-2 rounded-lg bg-gray-600 text-white font-medium disabled:opacity-50`}
                       disabled={currentLessonIndex === 0}
-                      onClick={() => setCurrentLessonIndex((idx) => Math.max(0, idx - 1))}
+                      onClick={() => {
+                        setCurrentLessonIndex((idx) => Math.max(0, idx - 1));
+                        showExitTicketAnswer(false);
+                        setExitTicketChoice(null);
+                      }}
                     >
                       ← Back
                     </button>
                     <button
                       className={`px-4 py-2 rounded-lg bg-indigo-600 text-white font-medium disabled:opacity-50`}
                       disabled={currentLessonIndex === lesson.length - 1}
-                      onClick={() =>
-                        setCurrentLessonIndex((idx) => Math.min(lesson.length - 1, idx + 1))
-                      }
+                      onClick={() => {
+                        setCurrentLessonIndex((idx) => Math.min(lesson.length - 1, idx + 1));
+                        showExitTicketAnswer(false);
+                        setExitTicketChoice(null);
+                      }}
                     >
 
-                      Forward →
-                    </button>
-                  </div>
+                    Forward →
+                  </button>
+                </div>
                 </div>
               )}
 
-              {/* Loading / waiting */}
-              {awaitingResponse && (
-                <div className="text-gray-50 rounded-xl flex justify-center items-center">
-                  <div className="animate-pulse text-4xl">{loadingText}</div>
-                </div>
-              )}
-              {waiting && chatHistory.length === 0 && (
-                <div className="text-gray-50 rounded-xl flex justify-center items-center">
-                  <div className="text-4xl">{introtext}</div>
-                </div>
-              )}
+            {/* Loading / waiting */}
+            {awaitingResponse && (
+              <div className="text-gray-50 rounded-xl flex justify-center items-center">
+                <div className="animate-pulse text-4xl">{loadingText}</div>
+              </div>
+            )}
+            {waiting && chatHistory.length === 0 && (
+              <div className="text-gray-50 rounded-xl flex justify-center items-center">
+                <div className="text-4xl">{introtext}</div>
+              </div>
+            )}
 
-              <div ref={bottomRef} />
-            </div>
+            <div ref={bottomRef} />
+          </div>
 
-            {/* Input */}
-            <div className="w-full flex justify-center">
-              <form
-                onSubmit={handleSubmit}
-                className={`${awaitingResponse ? "opacity-50 pointer-events-none" : ""
-                  } text-gray-900 dark:text-gray-100 flex flex-col h-fit w-full mt-2 rounded-xl`}
-              >
-                <div className="w-full h-fit p-2 gap-2 rounded-xl flex flex-col bg-gray-50 dark:bg-gray-800">
-                  {files.length > 0 && (
-                    <div className="flex flex-row gap-2 overflow-x-auto scrollbar-hide">
-                      {files.map((file, index) => (
-                        <div
-                          key={index}
-                          className="flex flex-row items-center w-fit p-2 h-full rounded-xl bg-gray-700 text-gray-50 font-medium text-sm"
-                        >
-                          <File size={32} className="mr-2" />
-                          <div className="flex flex-col">
-                            {file.name}
-                            <div className="text-xs text-gray-400">
-                              {(file.size / (1024 * 1024)).toFixed(2)} MB
-                            </div>
+          {/* Input */}
+          <div className="w-full flex justify-center">
+            <form
+              onSubmit={handleSubmit}
+              className={`${awaitingResponse ? "opacity-50 pointer-events-none" : ""
+                } text-gray-900 dark:text-gray-100 flex flex-col h-fit w-full mt-2 rounded-xl`}
+            >
+              <div className="w-full h-fit p-2 gap-2 rounded-xl flex flex-col bg-gray-50 dark:bg-gray-800">
+                {files.length > 0 && (
+                  <div className="flex flex-row gap-2 overflow-x-auto scrollbar-hide">
+                    {files.map((file, index) => (
+                      <div
+                        key={index}
+                        className="flex flex-row items-center w-fit p-2 h-full rounded-xl bg-gray-700 text-gray-50 font-medium text-sm"
+                      >
+                        <File size={32} className="mr-2" />
+                        <div className="flex flex-col">
+                          {file.name}
+                          <div className="text-xs text-gray-400">
+                            {(file.size / (1024 * 1024)).toFixed(2)} MB
                           </div>
                         </div>
-                      ))}
-                    </div>
-                  )}
-
-                  <div className="flex flex-row w-full items-center">
-                    <div
-                      onClick={() => {
-                        document.getElementById("fileInput")?.click();
-                        setInputOptions((prev) => !prev);
-                      }}
-                      className="flex items-center justify-center w-10 h-10 rounded-full bg-gray-700 text-lg font-medium text-center cursor-pointer"
-                      title="Attach files"
-                    >
-                      +
-                    </div>
-                    <input
-                      id="fileInput"
-                      type="file"
-                      multiple
-                      className="hidden"
-                      onChange={(e) => {
-                        if (e.target.files)
-                          setFiles((prev) => [...prev, ...Array.from(e.target.files)]);
-                      }}
-                    />
-                    <input
-                      value={textboxValue}
-                      onChange={(e) => setTextboxValue(e.target.value)}
-                      type="text"
-                      placeholder={
-                        mode === "free"
-                          ? "Describe your problem (you can also attach a file)…"
-                          : "Describe your problem or topic…  "
-                      }
-                      className="flex-grow mx-4 bg-transparent outline-none text-gray-100 placeholder-gray-400"
-                    />
-                    <button
-                      type="submit"
-                      className="flex items-center justify-center w-10 h-10 rounded-full bg-gray-700 text-lg font-medium text-center"
-                      aria-label="Send"
-                      title="Send"
-                    >
-                      <Send size={16} className="text-gray-300" />
-                    </button>
+                      </div>
+                    ))}
                   </div>
+                )}
+
+                <div className="flex flex-row w-full items-center">
+                  <div
+                    onClick={() => {
+                      document.getElementById("fileInput")?.click();
+                      setInputOptions((prev) => !prev);
+                    }}
+                    className="flex items-center justify-center w-10 h-10 rounded-full bg-gray-700 text-lg font-medium text-center cursor-pointer"
+                    title="Attach files"
+                  >
+                    +
+                  </div>
+                  <input
+                    id="fileInput"
+                    type="file"
+                    multiple
+                    className="hidden"
+                    onChange={(e) => {
+                      if (e.target.files)
+                        setFiles((prev) => [...prev, ...Array.from(e.target.files)]);
+                    }}
+                  />
+                  <input
+                    value={textboxValue}
+                    onChange={(e) => setTextboxValue(e.target.value)}
+                    type="text"
+                    placeholder={
+                      mode === "free"
+                        ? "Describe your problem (you can also attach a file)…"
+                        : "Describe your problem or topic…  "
+                    }
+                    className="flex-grow mx-4 bg-transparent outline-none text-gray-100 placeholder-gray-400"
+                  />
+                  <button
+                    type="submit"
+                    className="flex items-center justify-center w-10 h-10 rounded-full bg-gray-700 text-lg font-medium text-center"
+                    aria-label="Send"
+                    title="Send"
+                  >
+                    <Send size={16} className="text-gray-300" />
+                  </button>
                 </div>
-              </form>
-            </div>
+              </div>
+            </form>
           </div>
         </div>
       </div>
     </div>
+    </div >
   );
 }
