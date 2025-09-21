@@ -25,8 +25,10 @@ export default function Vinay() {
       .catch(() => setHasKey(false));
   }, []);
 
-  async function handleSubmit(e: { preventDefault: () => void; }) {
-    e.preventDefault()
+  
+
+  const handleSubmit = useCallback(async (e: { preventDefault: () => void; } | null) => {
+    if (e) e.preventDefault()
     if (textboxValue.trim() === "") return
     setChatHistory(prev => [...prev, textboxValue])
     setTextboxValue("")
