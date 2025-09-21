@@ -23,19 +23,14 @@ export async function POST(req: Request) {
 		console.log("Duplicate user signup detected");
 		return NextResponse.json({ error: "User already signed up" }, { status: 409 });
 	} else {
-		bcrypt.hash(userData.password, SALT_ROUNDS, function(err, hash) {
-			if (err) {
-				console.error(err);
-				return NextResponse.json({ error: "Error hashing password, please report this error to Virtual Prof." }, { status: 400 });
-			}
-			users.insertOne({
-				username: userData.username,
-				email: userData.email,
-				name: userData.name,
-				hash: hash
-			});
-			return NextResponse.json({ "Set-Cookie": `session=${createSession(userData.username)}` }, { status: 200 });
+		const hash = await bcrypt.hash(userData.password, SALT_ROUNDS);
+		users.insertOne({
+			username: userData.username,
+			email: userData.email,
+			name: userData.name,
+			hash: hash
 		});
+		return NextResponse.json({ "Set-Cookie": `session=${createSession(userData.username)}` }, { status: 200 });
 	}
 }
 
