@@ -323,7 +323,7 @@ export default function Chat({ initPrompt, clearInitPrompt }) {
                     </div>
                     <div className="mt-2 text-2xl font-semibold">Knowledge Check</div>
 
-                    <div className="flex ">
+                    <div className="">
                       {lesson[currentLessonIndex].exit_ticket.map((q, qi) => (
                         <div key={qi} className="col-span-2">
                           <div className="mb-1">{q.question}</div>
