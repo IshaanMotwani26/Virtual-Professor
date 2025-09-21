@@ -22,16 +22,12 @@ export async function POST(req: Request) {
 	if (!user) {
 		return NextResponse.json({ error: "Password or username is invalid" }, { status: 400 });
 	} else {
-		bcrypt.compare(data.password, user.hash, function(err, matches) {
-			if (err) {
-				console.error(err);
-				return NextResponse.json({ error: "Error hashing password" }, { status: 400 });
-			} else if (matches) {
-				return NextResponse.json({ "Set-Cookie": `session=${createSession(data.username)}` }, { status: 200 });
-			} else {
-				return NextResponse.json({ error: "Password or username is invalid" }, { status: 400 });
-			}
-		});
+		const matches = await bcrypt.compare(data.password, user.hash)
+		if (matches) {
+			return NextResponse.json({ "Set-Cookie": `session=${createSession(data.username)}` }, { status: 200 });
+		} else {
+			return NextResponse.json({ error: "Password or username is invalid" }, { status: 400 });
+		}
 	}
 }
 
