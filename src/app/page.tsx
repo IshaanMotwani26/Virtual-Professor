@@ -1,6 +1,7 @@
 "use client";
 import React, { useEffect, useState, useCallback } from "react";
 import { CalendarDays, ChartBar, House, Moon, School, SquarePen, Star, Sun, Target, Users } from 'lucide-react';
+import Chat from "./chat/page";
 
 export default function VirtualProfessorHomepage() {
 	// Core State
@@ -11,6 +12,7 @@ export default function VirtualProfessorHomepage() {
 	const [currentPage, setCurrentPage] = useState("home");
 	const [isSignUp, setIsSignUp] = useState(true);
 	const [isAuthenticated, setIsAuthenticated] = useState(false);
+	const [username, setUsername] = useState<string | null>(null);
 	const [uploadedFiles, setUploadedFiles] = useState<Array<{ name: string, type: string, keyPoints: string[] }>>([]);
 
 	// Error Handling State
@@ -98,6 +100,33 @@ export default function VirtualProfessorHomepage() {
 		}
 	}, [theme, showNotification]);
 
+	// On mount: check for a session cookie and validate it with the backend
+	useEffect(() => {
+		try {
+			const cookies = document.cookie.split(';').map(c => c.trim());
+			const sessionCookie = cookies.find(c => c.startsWith('session='));
+			if (!sessionCookie) return;
+			const sessionValue = sessionCookie.split('=')[1];
+			if (!sessionValue) return;
+			// validate with server
+			fetch(`/api/db/validate-session?session=${encodeURIComponent(sessionValue)}`)
+				.then(res => res.json().then(body => ({ ok: res.ok, body })))
+				.then(({ ok, body }) => {
+					if (ok && body.username) {
+						setIsAuthenticated(true);
+						setUsername(body.username);
+						showNotification('success', `Welcome back, ${body.username}`);
+					} else {
+						// invalid session: clear cookie
+						document.cookie = 'session=; path=/; max-age=0';
+					}
+				})
+				.catch(err => console.error('Session validation failed', err));
+		} catch (err) {
+			console.error('Error checking session cookie', err);
+		}
+	}, [showNotification]);
+
 	// Validation utilities
 	const validateEmail = (email: string): boolean => {
 		const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -183,11 +212,13 @@ export default function VirtualProfessorHomepage() {
 					throw new Error(errorData.error || 'Failed to create account');
 				}
 
-				// Handle session cookie if your backend returns it
+				// Handle session cookie returned in response body (workaround for Set-Cookie not persisting)
 				const responseData = await response.json();
-				if (responseData['Set-Cookie']) {
-					// The cookie should be automatically set by the browser
-					console.log('Session cookie received');
+				if (responseData.session_cookie) {
+					// Set cookie client-side. Note: not HttpOnly.
+					const cookieValue = responseData.session_cookie;
+					// You can customize path/max-age as needed
+					document.cookie = `session=${cookieValue}; path=/; max-age=${7 * 24 * 3600}`;
 				}
 			} else {
 				// For sign in, you'll need to create a separate endpoint
@@ -203,6 +234,12 @@ export default function VirtualProfessorHomepage() {
 				if (!response.ok) {
 					const errorData = await response.json();
 					throw new Error(errorData.error || 'Failed to sign in');
+				} else {
+					const responseData = await response.json();
+					if (responseData.session_cookie) {
+						const cookieValue = responseData.session_cookie;
+						document.cookie = `session=${cookieValue}; path=/; max-age=${7 * 24 * 3600}`;
+					}
 				}
 			}
 
@@ -565,15 +602,15 @@ export default function VirtualProfessorHomepage() {
 							key={nav.id}
 							onClick={() => {
 								if (nav.id === "upload") {
-									window.location.href = "/chat";
+									showPage("chat")
 								} else {
 									showPage(nav.id)
 								}
 							}
 							}
 							className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-all whitespace-nowrap text-sm font-medium ${currentPage === nav.id
-									? "bg-indigo-600 text-white shadow-md"
-									: "border dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 hover:border-indigo-400 dark:hover:border-indigo-500"
+								? "bg-indigo-600 text-white shadow-md"
+								: "border dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 hover:border-indigo-400 dark:hover:border-indigo-500"
 								}`}
 						>
 							<span className="text-base">{nav.icon}</span>
@@ -879,16 +916,16 @@ export default function VirtualProfessorHomepage() {
 									<td className="py-3">{course.grade}%</td>
 									<td className="py-3">
 										<span className={`px-2 py-1 rounded-full text-xs font-medium ${course.letter.startsWith('A') ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300' :
-												course.letter.startsWith('B') ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300' :
-													'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300'
+											course.letter.startsWith('B') ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300' :
+												'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300'
 											}`}>
 											{course.letter}
 										</span>
 									</td>
 									<td className="py-3">
 										<span className={`px-2 py-1 rounded-full text-xs ${course.status === 'Excellent' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300' :
-												course.status === 'Good' || course.status === 'On Track' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300' :
-													'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300'
+											course.status === 'Good' || course.status === 'On Track' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300' :
+												'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300'
 											}`}>
 											{course.status}
 										</span>
@@ -1314,6 +1351,7 @@ export default function VirtualProfessorHomepage() {
 				{currentPage === "progress" && <ProgressPage />}
 				{currentPage === "gpa" && <GPAPage />}
 				{currentPage === "media" && <MediaAnalysisPage />}
+				{currentPage === "chat" && <Chat />}
 			</div>
 			<Footer />
 		</main>

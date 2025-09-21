@@ -24,13 +24,16 @@ export async function POST(req: Request) {
 		return NextResponse.json({ error: "User already signed up" }, { status: 409 });
 	} else {
 		const hash = await bcrypt.hash(userData.password, SALT_ROUNDS);
-		users.insertOne({
+		await users.insertOne({
 			username: userData.username,
 			email: userData.email,
 			name: userData.name,
 			hash: hash
 		});
-		return NextResponse.json({ "Set-Cookie": `session=${createSession(userData.username)}` }, { status: 200 });
+
+		// create a session and return it in the response body so the client can set document.cookie
+		const session = await createSession(userData.username);
+		return NextResponse.json({ session_cookie: session }, { status: 200 });
 	}
 }
 
