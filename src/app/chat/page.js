@@ -64,23 +64,23 @@ export default function Chat({ initPrompt, clearInitPrompt }) {
 			setQuestions(response.questions)
 		}
 
-		// If an initial prompt is provided via the `init` query param, set it and submit
-		useEffect(() => {
-			try {
-				if (initPrompt && initPrompt.trim() !== "") {
-					// set the textbox value and auto-submit after a tick so component mounts
-					setTextboxValue(initPrompt);
-					// small timeout to let state update and UI render
-					setTimeout(() => {
-						// create a fake event object compatible with handleSubmit
-						handleSubmit({ preventDefault: () => { } });
-					}, 70);
-					clearInitPrompt("");
-				}
-			} catch (e) {
-				console.error('Failed to auto-send init prompt:', e);
-			}
-		}, [handleSubmit]);
+		// // If an initial prompt is provided via the `init` query param, set it and submit
+		// useEffect(() => {
+		// 	try {
+		// 		if (initPrompt && initPrompt.trim() !== "") {
+		// 			// set the textbox value and auto-submit after a tick so component mounts
+		// 			setTextboxValue(initPrompt);
+		// 			// small timeout to let state update and UI render
+		// 			setTimeout(() => {
+		// 				// create a fake event object compatible with handleSubmit
+		// 				handleSubmit({ preventDefault: () => { } });
+		// 			}, 70);
+		// 			clearInitPrompt("");
+		// 		}
+		// 	} catch (e) {
+		// 		console.error('Failed to auto-send init prompt:', e);
+		// 	}
+		// }, [handleSubmit]);
 
 	}
 
