@@ -1344,7 +1344,7 @@ export default function VirtualProfessorHomepage() {
 			<Header />
 			<NavigationMenu />
 
-			<div className="py-8">
+			<div className="py-4">
 				{currentPage === "home" && <HomePage />}
 				{currentPage === "tutor" && <TutorPage />}
 				{currentPage === "study-group" && <StudyGroupPage />}
