@@ -123,7 +123,7 @@ export default function VirtualProfessorHomepage() {
 
 	// Persist and apply on change
 	useEffect(() => {
-		try { localStorage.setItem(THEME_KEY, theme); } catch {}
+		try { localStorage.setItem(THEME_KEY, theme); } catch { }
 		try { applyTheme(theme); } catch (error) {
 			console.error('Error applying theme:', error);
 			showNotification('error', 'Failed to apply theme changes');
@@ -677,11 +677,10 @@ export default function VirtualProfessorHomepage() {
 						<button
 							type="button"
 							onClick={() => setSortMode("alpha")}
-							className={`px-3 py-1 text-sm font-medium transition ${
-								sortMode === "alpha"
+							className={`px-3 py-1 text-sm font-medium transition ${sortMode === "alpha"
 									? "bg-indigo-600 text-white"
 									: "bg-transparent hover:bg-gray-100 dark:hover:bg-gray-800"
-							}`}
+								}`}
 							aria-pressed={sortMode === "alpha"}
 						>
 							A → Z
@@ -689,11 +688,10 @@ export default function VirtualProfessorHomepage() {
 						<button
 							type="button"
 							onClick={() => setSortMode("category")}
-							className={`px-3 py-1 text-sm font-medium border-l dark:border-gray-700 transition ${
-								sortMode === "category"
+							className={`px-3 py-1 text-sm font-medium border-l dark:border-gray-700 transition ${sortMode === "category"
 									? "bg-indigo-600 text-white"
 									: "bg-transparent hover:bg-gray-100 dark:hover:bg-gray-800"
-							}`}
+								}`}
 							aria-pressed={sortMode === "category"}
 						>
 							By category
@@ -1433,8 +1431,8 @@ export default function VirtualProfessorHomepage() {
 				{currentPage === "gpa" && <GPAPage />}
 				{currentPage === "media" && <MediaAnalysisPage />}
 				{currentPage === "Chat" && <Chat initPrompt={initPrompt} clearInitPrompt={setInitPrompt} />}
+				<Footer />
 			</div>
-			<Footer />
 		</main>
 	);
 }
