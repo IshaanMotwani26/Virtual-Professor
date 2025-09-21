@@ -1,7 +1,8 @@
 "use client";
 import React, { useEffect, useState, useCallback } from "react";
-import { BookMarked, BookOpenText, CalendarDays, ChartBar, ChartSpline, FileTerminal, House, Moon, School, SquarePen, Star, Sun, Target, Users } from 'lucide-react';
+import { Puzzle, BookMarked, BookOpenText, CalendarDays, ChartBar, ChartSpline, FileTerminal, House, Moon, School, SquarePen, Star, Sun, Target, Users } from 'lucide-react';
 import Chat from "./chat/page";
+import Panel from "./panel/page";
 
 export default function VirtualProfessorHomepage() {
 	// Core State
@@ -634,7 +635,7 @@ export default function VirtualProfessorHomepage() {
 		const navigationItems = [
 			{ id: "home", label: "Home", icon: <House size={18} /> },
 			{ id: "Chat", label: "Chat", icon: <SquarePen size={18} /> },
-			{ id: "tutor", label: "Tutor", icon: <School size={18} /> },
+			{ id: "panel", label: "Browser Extension", icon: <Puzzle size={18} /> },
 			{ id: "study-group", label: "Groups", icon: <Users size={18} /> },
 			{ id: "progress", label: "Progress", icon: <ChartBar size={18} /> }
 		];
@@ -678,8 +679,8 @@ export default function VirtualProfessorHomepage() {
 							type="button"
 							onClick={() => setSortMode("alpha")}
 							className={`px-3 py-1 text-sm font-medium transition ${sortMode === "alpha"
-									? "bg-indigo-600 text-white"
-									: "bg-transparent hover:bg-gray-100 dark:hover:bg-gray-800"
+								? "bg-indigo-600 text-white"
+								: "bg-transparent hover:bg-gray-100 dark:hover:bg-gray-800"
 								}`}
 							aria-pressed={sortMode === "alpha"}
 						>
@@ -689,8 +690,8 @@ export default function VirtualProfessorHomepage() {
 							type="button"
 							onClick={() => setSortMode("category")}
 							className={`px-3 py-1 text-sm font-medium border-l dark:border-gray-700 transition ${sortMode === "category"
-									? "bg-indigo-600 text-white"
-									: "bg-transparent hover:bg-gray-100 dark:hover:bg-gray-800"
+								? "bg-indigo-600 text-white"
+								: "bg-transparent hover:bg-gray-100 dark:hover:bg-gray-800"
 								}`}
 							aria-pressed={sortMode === "category"}
 						>
@@ -1425,7 +1426,7 @@ export default function VirtualProfessorHomepage() {
 
 			<div className="py-4">
 				{currentPage === "home" && <HomePage />}
-				{currentPage === "tutor" && <TutorPage />}
+				{currentPage === "panel" && <Panel />}
 				{currentPage === "study-group" && <StudyGroupPage />}
 				{currentPage === "progress" && <ProgressPage />}
 				{currentPage === "gpa" && <GPAPage />}

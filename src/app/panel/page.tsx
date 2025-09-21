@@ -3,7 +3,6 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import Header from "@/components/header";
 
 export default function Panel() {
 	const [hasKey, setHasKey] = useState<boolean | null>(null);
@@ -16,8 +15,7 @@ export default function Panel() {
 	}, []);
 
 	return (
-		<div className="min-h-screen bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-gray-100">
-			<Header />
+		<div className="min-h-screen text-gray-900 dark:text-gray-100">
 			<main className="mx-auto max-w-5xl px-4 py-10">
 				<h1 className="text-3xl font-bold tracking-tight">Everywhere Panel</h1>
 				<p className="mt-2 text-gray-600 dark:text-gray-400">
